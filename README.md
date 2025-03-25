@@ -49,3 +49,12 @@ Uma academia de ginástica precisa de um sistema para monitorar a frequência do
 - Adicionar autenticação JWT na API
 - Containerizar a aplicação com Docker
 - Implementar testes unitários
+
+## Instruções de Entrega
+1. Faça um fork deste repositório
+2. Desenvolva a solução em seu fork
+3. Crie um Pull Request para este repositório com sua solução
+4. Envie um email para rh@pactosolucoes.com.br contendo:
+   - Seu currículo
+   - Link do Pull Request criado
+   - Informações de contato
