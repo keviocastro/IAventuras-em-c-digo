@@ -7,3 +7,4 @@ sqlalchemy
 python-dotenv
 asyncpg
 alembic
+faker
