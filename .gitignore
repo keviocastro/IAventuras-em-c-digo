@@ -28,3 +28,6 @@ pip-delete-this-directory.txt
 
 # RabbitMQ (caso gere arquivos de log)
 rabbitmq_logs/
+
+# Alembic (somente versões de migração para evitar conflitos)
+alembic/versions/

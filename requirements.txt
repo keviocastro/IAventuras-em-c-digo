@@ -3,3 +3,7 @@ uvicorn
 psycopg2-binary
 pika
 scikit-learn
+sqlalchemy
+python-dotenv
+asyncpg
+alembic
