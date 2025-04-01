@@ -33,7 +33,6 @@ with open(csv_path, "r") as f:
         }
         alunos.append(aluno)
 
-    # Inserção em batch com ON CONFLICT DO NOTHING
     stmt = insert(Aluno).values(alunos).on_conflict_do_nothing(index_elements=["email"])
     session.execute(stmt)
     session.commit()

@@ -31,7 +31,7 @@ def calcular_metricas_churn(db: Session):
             duracao_media = sum(duracoes) / len(duracoes) if duracoes else 0
         else:
             frequencia_semanal = 0
-            hoje = datetime.today().date()  # Garantir que 'hoje' seja do tipo 'date'
+            hoje = datetime.today().date()
             tempo_ultimo_checkin = (hoje - aluno.data_matricula).days
 
             duracao_media = 0
