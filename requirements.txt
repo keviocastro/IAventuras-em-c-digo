@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+psycopg2-binary
+pika
+scikit-learn
+sqlalchemy
+python-dotenv
+asyncpg
+alembic
+faker
+jupyter
+scikit-learn
+pandas
+numpy==1.26.0
+jolib

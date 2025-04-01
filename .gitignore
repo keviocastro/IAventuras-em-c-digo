@@ -1,0 +1,33 @@
+# Ambientes virtuais
+venv/
+.env
+
+# Arquivos do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs e arquivos temporários
+*.log
+*.sqlite3
+
+# Configuração do VSCode
+.vscode/
+
+# Dependências instaladas
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Arquivos gerados por Jupyter
+.ipynb_checkpoints/
+
+# Arquivos do PostgreSQL
+*.dump
+*.sql
+
+# RabbitMQ (caso gere arquivos de log)
+rabbitmq_logs/
+
+# Alembic (somente versões de migração para evitar conflitos)
+alembic/versions/
