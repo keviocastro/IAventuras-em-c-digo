@@ -1,0 +1,7 @@
+{
+    "host": "localhost",
+    "dbname": "academia",
+    "user": "postgres",
+    "password": "sua_senha",
+    "port": 5433
+}

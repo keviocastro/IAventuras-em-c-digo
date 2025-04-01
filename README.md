@@ -1,60 +1,170 @@
-# Teste Prático para Engenheiro de IA - Nível Júnior
+# 🏋️‍♂️ Sistema de Gestão de Academia com FastAPI, RabbitMQ e Machine Learning
 
-## Contexto
-Uma academia de ginástica precisa de um sistema para monitorar a frequência dos alunos e prever possíveis desistências (churn). O sistema deve processar dados de entrada dos alunos na academia e gerar insights para a equipe de retenção.
+Este projeto é uma API REST para gerenciamento de alunos, check-ins, saídas (checkouts), geração de relatórios e previsão de churn em academias.  
+Utiliza **FastAPI**, **RabbitMQ**, **PostgreSQL** e **scikit-learn** para modelagem preditiva com **Random Forest**.
 
-## Requisitos Técnicos
+---
 
-### Parte 1: API e Banco de Dados
-1. Criar uma API REST usando Flask ou FastAPI com os seguintes endpoints:
-   - `POST /aluno/registro`: Registrar um novo aluno
-   - `POST /aluno/checkin`: Registrar entrada do aluno na academia
-   - `GET /aluno/{id}/frequencia`: Obter histórico de frequência
-   - `GET /aluno/{id}/risco-churn`: Obter probabilidade de desistência
+## 🚀 Funcionalidades
 
-2. Implementar um banco de dados PostgreSQL com as seguintes tabelas:
-   - `alunos`: Informações básicas dos alunos
-   - `checkins`: Registro de entradas na academia
-   - `planos`: Tipos de planos disponíveis
+- Cadastro de alunos
+- Registro de check-ins manuais e em massa (via fila)
+- Registro de saída (checkout) manual e em massa (via fila)
+- Geração automática de relatórios diários
+- Modelo preditivo de churn com base em:
+  - Tempo desde o último check-in
+  - Frequência semanal
+  - Duração média das visitas
+  - Tipo de plano
+- Arquitetura assíncrona com filas e workers via RabbitMQ
+- API documentada automaticamente com Swagger (OpenAPI)
 
-### Parte 2: Processamento Assíncrono
-1. Implementar um sistema de filas usando RabbitMQ para:
-   - Processar checkins em massa
-   - Gerar relatórios diários de frequência
-   - Atualizar o modelo de previsão de churn
+---
 
-### Parte 3: Modelo de IA para Previsão de Churn
-1. Desenvolver um modelo simples de machine learning para prever a probabilidade de um aluno cancelar a matrícula baseado em:
-   - Frequência semanal
-   - Tempo desde o último checkin
-   - Duração média das visitas
-   - Tipo de plano
+## 🧱 Estrutura do Projeto
 
-## Entregáveis
-1. Código fonte completo no GitHub
-2. Documentação da API (Swagger ou similar)
-3. Script para inicialização do banco de dados
-4. Arquivo README com instruções de instalação e execução
-5. Notebook Jupyter demonstrando o treinamento do modelo de previsão de churn
+```
+PLANOS_ACADEMIA/
+├── app/
+│   ├── main.py                # Inicialização da API
+│   ├── producer.py            # Envio de mensagens para RabbitMQ
+│   └── routes/
+│       ├── alunos.py          # Endpoints de alunos
+│       ├── checkins.py        # Endpoints de entrada
+│       ├── checkouts.py       # Endpoints de saída
+│       └── tarefas.py         # Endpoints para acionar as filas
+├── modelos/
+│   └── modelo_churn.pkl       # Modelo treinado
+├── relatorios/
+│   └── relatorio_frequencia_YYYYMMDD.csv
+├── scripts/
+│   ├── Criacao_banco_academia.py
+│   ├── Alimentacao_banco.py
+│   └── test_api.py            # Script para testes completos
+├── workers/
+│   ├── worker_checkin.py
+│   ├── worker_checkout.py
+│   ├── worker_relatorio.py
+│   └── worker_churn.py
+├── banco.json                 # Configurações do banco (ignorado no git)
+├── requirements.txt
+└── README.md
+```
 
-## Critérios de Avaliação
-- Qualidade e organização do código
-- Funcionalidade da API
-- Implementação correta do sistema de filas
-- Performance e precisão do modelo de previsão
-- Documentação e facilidade de setup
+---
 
-## Bônus (opcional)
-- Implementar cache com Redis para melhorar performance
-- Adicionar autenticação JWT na API
-- Containerizar a aplicação com Docker
-- Implementar testes unitários
+## 🛠️ Requisitos
 
-## Instruções de Entrega
-1. Faça um fork deste repositório
-2. Desenvolva a solução em seu fork
-3. Crie um Pull Request para este repositório com sua solução
-4. Envie um email para rh@pactosolucoes.com.br contendo:
-   - Seu currículo
-   - Link do Pull Request criado
-   - Informações de contato
+- Python 3.10+
+- PostgreSQL (rodando na porta 5433)
+- RabbitMQ (painel acessível em `http://localhost:15672`)
+
+---
+
+## 📦 Instalação
+
+1. Clone o repositório:
+
+```bash
+git clone https://github.com/seuusuario/seuprojeto.git
+cd PLANOS_ACADEMIA
+```
+
+2. Crie e ative o ambiente virtual:
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate     # Windows
+# ou
+source .venv/bin/activate  # Linux/macOS
+```
+
+3. Instale as dependências:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Configure o banco de dados:
+
+```bash
+python scripts/Criacao_banco_academia.py
+python scripts/Alimentacao_banco.py  # opcional
+```
+
+5. Crie e preencha o arquivo `banco.json`:
+
+```json
+{
+  "host": "localhost",
+  "dbname": "academia",
+  "user": "postgres",
+  "password": "sua_senha",
+  "port": 5433
+}
+```
+
+---
+
+## 🧪 Executando o projeto
+
+### 1. Inicie a API
+
+```bash
+fastapi dev app.main
+```
+
+Acesse a documentação:
+
+📍 http://localhost:8000/docs
+
+---
+
+### 2. Inicie os workers (em terminais separados)
+
+```bash
+python workers/worker_checkin.py
+python workers/worker_checkout.py
+python workers/worker_relatorio.py
+python workers/worker_churn.py
+```
+
+---
+
+### 3. Teste a aplicação com o script de integração
+
+```bash
+python scripts/test_api.py
+```
+
+---
+
+## 📂 Diretórios de saída
+
+- 📁 `relatorios/`: CSVs de frequência diários
+- 📁 `modelos/`: modelo preditivo de churn treinado
+
+---
+
+## 🔒 Segurança
+
+- O arquivo `banco.json` **está no `.gitignore`** e não deve ser versionado.
+- Sistema preparado para incluir autenticação JWT.
+
+---
+
+## 📓 Exemplo de Modelo: `modelo_churn.ipynb`
+
+O arquivo `modelo_churn.ipynb`, disponível na raiz do projeto (ou na pasta `notebooks/`, se preferir organizá-lo), contém um **exemplo prático** de como o modelo preditivo de churn é construído utilizando a biblioteca **scikit-learn**.
+
+Nele, você encontrará:
+
+- Geração de dados simulados
+- Pré-processamento das variáveis
+- Treinamento com `RandomForestClassifier`
+- Avaliação e visualização do modelo
+- Salvamento do modelo em `.pkl` (formato usado pela API)
+
+💡 Esse notebook é útil para entender a lógica por trás do modelo de churn e pode ser usado como base para ajustes, testes ou apresentações.
+
+---
