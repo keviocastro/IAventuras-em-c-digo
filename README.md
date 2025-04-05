@@ -238,7 +238,7 @@ notebooks/modelo_churn.ipynb
 
 
 
-#### Como testar
+### Como testar
 
 - crie um abiente e instale as dependencias, garanta que o postgresql esta instalado e rodando, instale o redis cache
 - execute o "init_db.py" da pasta backend para inicializar o banco
