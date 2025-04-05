@@ -1,0 +1,440 @@
+{% extends 'base.html' %}
+
+{% block title %}Evolução do Aluno - Academia{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-chart-line"></i> Evolução do Aluno</h1>
+        <div>
+            <a href="{% url 'dashboard:detalhe_aluno' aluno_id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Perfil
+            </a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registrarMedidasModal">
+                <i class="fas fa-plus"></i> Registrar Novas Medidas
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações do Aluno -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-user me-1"></i>
+                    Informações do Aluno
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ aluno.nome }}</h5>
+                    <ul class="list-group list-group-flush mt-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-calendar-alt me-2"></i> Idade</span>
+                            <span class="badge bg-primary rounded-pill">{{ aluno.idade }} anos</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-weight me-2"></i> Peso atual</span>
+                            <span class="badge bg-primary rounded-pill">{{ medidas_atuais.peso|default:"--" }} kg</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-ruler-vertical me-2"></i> Altura</span>
+                            <span class="badge bg-primary rounded-pill">{{ medidas_atuais.altura|default:"--" }} cm</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-calculator me-2"></i> IMC</span>
+                            <span class="badge 
+                                {% if medidas_atuais.imc < 18.5 %}bg-warning
+                                {% elif medidas_atuais.imc < 25 %}bg-success
+                                {% elif medidas_atuais.imc < 30 %}bg-warning
+                                {% else %}bg-danger{% endif %} rounded-pill">
+                                {{ medidas_atuais.imc|default:"--"|floatformat:1 }}
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-heart me-2"></i> BF %</span>
+                            <span class="badge bg-primary rounded-pill">{{ medidas_atuais.bf_porcentagem|default:"--" }}%</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Resumo da Evolução -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-trophy me-1"></i>
+                    Resumo da Evolução
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Perda de Peso</h6>
+                        <div class="progress" style="height: 25px;">
+                            {% with perdido=resumo_evolucao.peso_perdido meta=resumo_evolucao.meta_peso %}
+                                {% if perdido > 0 %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ perdido|div:meta|mul:100|floatformat:0 }}%;" 
+                                        aria-valuenow="{{ perdido|floatformat:1 }}" aria-valuemin="0" aria-valuemax="{{ meta }}">
+                                        {{ perdido|floatformat:1 }} kg
+                                    </div>
+                                {% else %}
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: 0%;" 
+                                        aria-valuenow="0" aria-valuemin="0" aria-valuemax="{{ meta }}">
+                                        0 kg
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <small class="text-muted">{{ resumo_evolucao.peso_perdido|floatformat:1 }} de {{ resumo_evolucao.meta_peso }} kg</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Redução BF%</h6>
+                        <div class="progress" style="height: 25px;">
+                            {% with reduzido=resumo_evolucao.bf_reduzido meta=resumo_evolucao.meta_bf %}
+                                {% if reduzido > 0 %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ reduzido|div:meta|mul:100|floatformat:0 }}%;" 
+                                        aria-valuenow="{{ reduzido|floatformat:1 }}" aria-valuemin="0" aria-valuemax="{{ meta }}">
+                                        {{ reduzido|floatformat:1 }}%
+                                    </div>
+                                {% else %}
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: 0%;" 
+                                        aria-valuenow="0" aria-valuemin="0" aria-valuemax="{{ meta }}">
+                                        0%
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <small class="text-muted">{{ resumo_evolucao.bf_reduzido|floatformat:1 }} de {{ resumo_evolucao.meta_bf }}%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos de Evolução -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="graficosTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="peso-tab" data-bs-toggle="tab" data-bs-target="#peso" type="button" role="tab" aria-controls="peso" aria-selected="true">Peso</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="bf-tab" data-bs-toggle="tab" data-bs-target="#bf" type="button" role="tab" aria-controls="bf" aria-selected="false">% Gordura</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="circunferencias-tab" data-bs-toggle="tab" data-bs-target="#circunferencias" type="button" role="tab" aria-controls="circunferencias" aria-selected="false">Circunferências</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="graficosTabContent">
+                        <div class="tab-pane fade show active" id="peso" role="tabpanel" aria-labelledby="peso-tab">
+                            <canvas id="grafico-peso" height="300"></canvas>
+                        </div>
+                        <div class="tab-pane fade" id="bf" role="tabpanel" aria-labelledby="bf-tab">
+                            <canvas id="grafico-bf" height="300"></canvas>
+                        </div>
+                        <div class="tab-pane fade" id="circunferencias" role="tabpanel" aria-labelledby="circunferencias-tab">
+                            <canvas id="grafico-circunferencias" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Medidas -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-history me-1"></i>
+            Histórico de Medidas
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Peso (kg)</th>
+                            <th>IMC</th>
+                            <th>BF (%)</th>
+                            <th>Braço (cm)</th>
+                            <th>Cintura (cm)</th>
+                            <th>Quadril (cm)</th>
+                            <th>Coxa (cm)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if historico_medidas %}
+                            {% for medida in historico_medidas %}
+                                <tr>
+                                    <td>{{ medida.data|date:"d/m/Y" }}</td>
+                                    <td>{{ medida.peso|floatformat:1 }}</td>
+                                    <td>
+                                        {{ medida.imc|floatformat:1 }}
+                                        <span class="badge 
+                                            {% if medida.imc < 18.5 %}bg-warning
+                                            {% elif medida.imc < 25 %}bg-success
+                                            {% elif medida.imc < 30 %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {% if medida.imc < 18.5 %}Abaixo
+                                            {% elif medida.imc < 25 %}Normal
+                                            {% elif medida.imc < 30 %}Acima
+                                            {% else %}Obesidade{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ medida.bf_porcentagem|floatformat:1 }}%</td>
+                                    <td>{{ medida.braco|floatformat:1 }}</td>
+                                    <td>{{ medida.cintura|floatformat:1 }}</td>
+                                    <td>{{ medida.quadril|floatformat:1 }}</td>
+                                    <td>{{ medida.coxa|floatformat:1 }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detalhesMedidasModal" data-medida-id="{{ medida.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center">Nenhuma medida registrada.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Registrar Medidas -->
+<div class="modal fade" id="registrarMedidasModal" tabindex="-1" aria-labelledby="registrarMedidasModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registrarMedidasModalLabel">Registrar Novas Medidas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'dashboard:registrar_medidas' aluno_id %}" method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="data" class="form-label">Data</label>
+                                <input type="date" class="form-control" id="data" name="data" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="peso" class="form-label">Peso (kg)</label>
+                                <input type="number" class="form-control" id="peso" name="peso" step="0.1" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="altura" class="form-label">Altura (cm)</label>
+                                <input type="number" class="form-control" id="altura" name="altura" step="0.1" min="0" value="{{ medidas_atuais.altura|default:'' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="bf_porcentagem" class="form-label">% de Gordura Corporal</label>
+                                <input type="number" class="form-control" id="bf_porcentagem" name="bf_porcentagem" step="0.1" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="braco" class="form-label">Circunferência do Braço (cm)</label>
+                                <input type="number" class="form-control" id="braco" name="braco" step="0.1" min="0">
+                            </div>
+                            <div class="mb-3">
+                                <label for="cintura" class="form-label">Circunferência da Cintura (cm)</label>
+                                <input type="number" class="form-control" id="cintura" name="cintura" step="0.1" min="0">
+                            </div>
+                            <div class="mb-3">
+                                <label for="quadril" class="form-label">Circunferência do Quadril (cm)</label>
+                                <input type="number" class="form-control" id="quadril" name="quadril" step="0.1" min="0">
+                            </div>
+                            <div class="mb-3">
+                                <label for="coxa" class="form-label">Circunferência da Coxa (cm)</label>
+                                <input type="number" class="form-control" id="coxa" name="coxa" step="0.1" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Detalhes das Medidas -->
+<div class="modal fade" id="detalhesMedidasModal" tabindex="-1" aria-labelledby="detalhesMedidasModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detalhesMedidasModalLabel">Detalhes das Medidas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detalhesMedidasConteudo">
+                    <!-- Conteúdo será preenchido via JavaScript -->
+                    <div class="alert alert-info">Carregando detalhes...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Preencher a data atual no formulário
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('data').value = hoje;
+
+        // Dados dos gráficos 
+        const dadosPeso = {
+            labels: {{ datas_grafico|safe }},
+            datasets: [{
+                label: 'Peso (kg)',
+                data: {{ pesos_grafico|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                tension: 0.1
+            }]
+        };
+
+        const dadosBF = {
+            labels: {{ datas_grafico|safe }},
+            datasets: [{
+                label: '% Gordura Corporal',
+                data: {{ bf_grafico|safe }},
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                tension: 0.1
+            }]
+        };
+
+        const dadosCircunferencias = {
+            labels: {{ datas_grafico|safe }},
+            datasets: [
+                {
+                    label: 'Braço (cm)',
+                    data: {{ braco_grafico|safe }},
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Cintura (cm)',
+                    data: {{ cintura_grafico|safe }},
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Quadril (cm)',
+                    data: {{ quadril_grafico|safe }},
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Coxa (cm)',
+                    data: {{ coxa_grafico|safe }},
+                    borderColor: 'rgba(255, 205, 86, 1)',
+                    tension: 0.1
+                }
+            ]
+        };
+
+        const opcoes = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        };
+
+        // Criar os gráficos
+        new Chart(
+            document.getElementById('grafico-peso').getContext('2d'),
+            {
+                type: 'line',
+                data: dadosPeso,
+                options: opcoes
+            }
+        );
+
+        new Chart(
+            document.getElementById('grafico-bf').getContext('2d'),
+            {
+                type: 'line',
+                data: dadosBF,
+                options: opcoes
+            }
+        );
+
+        new Chart(
+            document.getElementById('grafico-circunferencias').getContext('2d'),
+            {
+                type: 'line',
+                data: dadosCircunferencias,
+                options: opcoes
+            }
+        );
+
+        // Configurar o modal de detalhes
+        const detalhesMedidasModal = document.getElementById('detalhesMedidasModal');
+        detalhesMedidasModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const medidaId = button.getAttribute('data-medida-id');
+            
+            // Aqui você faria uma requisição AJAX para buscar os detalhes
+            // Por enquanto vamos apenas simular com um placeholder
+            document.getElementById('detalhesMedidasConteudo').innerHTML = `
+                <p class="text-center">Carregando detalhes da medida #${medidaId}...</p>
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+            `;
+
+            // Simulando uma chamada AJAX
+            setTimeout(function() {
+                // Este é apenas um exemplo estático - na implementação real,
+                // você buscaria os dados do servidor
+                document.getElementById('detalhesMedidasConteudo').innerHTML = `
+                    <h6 class="mb-3">Medida realizada em 15/06/2023</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Peso:</strong> 75.5 kg</p>
+                            <p><strong>Altura:</strong> 175 cm</p>
+                            <p><strong>IMC:</strong> 24.7 (Normal)</p>
+                            <p><strong>% Gordura:</strong> 18.5%</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Braço:</strong> 32.5 cm</p>
+                            <p><strong>Cintura:</strong> 85.0 cm</p>
+                            <p><strong>Quadril:</strong> 95.0 cm</p>
+                            <p><strong>Coxa:</strong> 55.0 cm</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Observações:</h6>
+                        <p>Aluno apresentou boa evolução desde a última medição.</p>
+                    </div>
+                `;
+            }, 1000);
+        });
+    });
+</script>
+{% endblock %} 

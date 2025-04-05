@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Modelo de Churn | {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feature-bar {
+        height: 24px;
+        border-radius: 4px;
+        background-color: #0d6efd;
+    }
+    .confusion-matrix {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    .confusion-matrix td, .confusion-matrix th {
+        text-align: center;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+    }
+    .confusion-matrix th {
+        background-color: #f8f9fa;
+    }
+    .confusion-matrix td.bg-success-light {
+        background-color: rgba(40, 167, 69, 0.2);
+    }
+    .confusion-matrix td.bg-danger-light {
+        background-color: rgba(220, 53, 69, 0.2);
+    }
+    .metric-card {
+        text-align: center;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    .metric-card .value {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    .metric-card .title {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <h2>
+            <i class="fas fa-brain"></i> Detalhes do Modelo #{{ modelo.id }}
+        </h2>
+        <a href="{% url 'dashboard:estatisticas_modelo' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    {% if mensagem_erro %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i> {{ mensagem_erro }}
+        </div>
+    {% endif %}
+    
+    {% if modelo %}
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Informações Gerais
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>ID:</span>
+                                <span class="badge bg-primary rounded-pill">{{ modelo.id }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Data de Criação:</span>
+                                <span>{{ modelo.data_criacao_formatada }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Total de Amostras:</span>
+                                <span class="badge bg-secondary rounded-pill">{{ modelo.total_amostras }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Alunos Ativos:</span>
+                                <span class="badge bg-success rounded-pill">{{ modelo.qtd_ativos }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Alunos Inativos:</span>
+                                <span class="badge bg-danger rounded-pill">{{ modelo.qtd_inativos }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Versão do Modelo:</span>
+                                <span>{{ modelo.versao_modelo|default:"1.0" }}</span>
+                            </li>
+                        </ul>
+                        
+                        {% if modelo.descricao %}
+                            <div class="mt-3">
+                                <h6>Descrição:</h6>
+                                <p>{{ modelo.descricao }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i> Métricas de Desempenho
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="metric-card bg-primary bg-opacity-10">
+                                    <div class="value text-primary">{{ modelo.acuracia_pct }}</div>
+                                    <div class="title">Acurácia</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="metric-card bg-success bg-opacity-10">
+                                    <div class="value text-success">{{ modelo.precisao_pct }}</div>
+                                    <div class="title">Precisão</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="metric-card bg-info bg-opacity-10">
+                                    <div class="value text-info">{{ modelo.recall_pct }}</div>
+                                    <div class="title">Recall</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="metric-card bg-warning bg-opacity-10">
+                                    <div class="value text-warning">{{ modelo.f1_score_pct }}</div>
+                                    <div class="title">F1-Score</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="metric-card bg-danger bg-opacity-10">
+                                    <div class="value text-danger">{{ modelo.auc_pct }}</div>
+                                    <div class="title">AUC</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie"></i> Distribuição de Classes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Gráfico de distribuição -->
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="py-3 bg-success bg-opacity-25 rounded mb-2">
+                                    <h4>{{ modelo.qtd_ativos }}</h4>
+                                </div>
+                                <p>Alunos Ativos ({{ modelo.pct_ativos|floatformat:1 }}%)</p>
+                            </div>
+                            <div class="col-6">
+                                <div class="py-3 bg-danger bg-opacity-25 rounded mb-2">
+                                    <h4>{{ modelo.qtd_inativos }}</h4>
+                                </div>
+                                <p>Alunos Inativos ({{ modelo.pct_inativos|floatformat:1 }}%)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 text-center">
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-success" 
+                                     role="progressbar" 
+                                     style="width: {{ modelo.pct_ativos }}%;" 
+                                     aria-valuenow="{{ modelo.pct_ativos }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ modelo.pct_ativos|floatformat:1 }}%
+                                </div>
+                                <div class="progress-bar bg-danger" 
+                                     role="progressbar" 
+                                     style="width: {{ modelo.pct_inativos }}%;" 
+                                     aria-valuenow="{{ modelo.pct_inativos }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ modelo.pct_inativos|floatformat:1 }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table"></i> Matriz de Confusão
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if modelo.matriz_confusao_formatada %}
+                            <div class="table-responsive">
+                                <table class="confusion-matrix">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2" rowspan="2">Matriz de Confusão</th>
+                                            <th colspan="2">Classe Prevista</th>
+                                        </tr>
+                                        <tr>
+                                            <th>Não Churn (0)</th>
+                                            <th>Churn (1)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th rowspan="2">Classe Real</th>
+                                            <th>Não Churn (0)</th>
+                                            <td class="bg-success-light">{{ modelo.matriz_confusao_formatada.tn }} (VN)</td>
+                                            <td class="bg-danger-light">{{ modelo.matriz_confusao_formatada.fp }} (FP)</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Churn (1)</th>
+                                            <td class="bg-danger-light">{{ modelo.matriz_confusao_formatada.fn }} (FN)</td>
+                                            <td class="bg-success-light">{{ modelo.matriz_confusao_formatada.tp }} (VP)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="mt-3 text-center text-muted small">
+                                    <p>VN = Verdadeiro Negativo, FP = Falso Positivo</p>
+                                    <p>FN = Falso Negativo, VP = Verdadeiro Positivo</p>
+                                    <p>Total de previsões: {{ modelo.matriz_confusao_formatada.total }}</p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Matriz de confusão não disponível para este modelo.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-star"></i> Importância das Features
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if modelo.top_features %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Importância</th>
+                                    <th width="50%">Peso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature in modelo.top_features %}
+                                    <tr>
+                                        <td>{{ feature.nome }}</td>
+                                        <td>{{ feature.importancia_pct }}</td>
+                                        <td>
+                                            <div class="feature-bar" style="width: {{ feature.importancia_pct }}"></div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="small text-muted mt-3">
+                        <i class="fas fa-info-circle"></i> A importância das features indica o quanto cada variável contribui para as previsões do modelo.
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Informações sobre importância das features não disponíveis para este modelo.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}Status do Sistema | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">
+        <i class="fas fa-server"></i> Status do Sistema
+    </h2>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <!-- Mensagem de erro caso exista -->
+            {% if mensagem_erro %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> {{ mensagem_erro }}
+                </div>
+            {% endif %}
+            
+            <!-- Conteúdo principal -->
+            {% if status %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Informações do Sistema
+                            </h5>
+                            <button class="btn btn-outline-light btn-sm" onClick="window.location.reload()">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if status.timestamp %}
+                            <p class="text-muted mb-4">Última atualização: {{ status.timestamp }}</p>
+                        {% endif %}
+                        
+                        <!-- Status da API -->
+                        {% if status.api %}
+                            <h5 class="border-bottom pb-2">API</h5>
+                            <div class="card mb-4 
+                                {% if status.api.status == 'online' %}
+                                    border-success
+                                {% else %}
+                                    border-danger
+                                {% endif %}">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Status:</strong> 
+                                                {% if status.api.status == 'online' %}
+                                                    <span class="text-success">
+                                                        <i class="fas fa-check-circle"></i> Online
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-times-circle"></i> Offline
+                                                    </span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Versão:</strong> {{ status.api.version|default:"N/A" }}</p>
+                                            {% if status.api.message %}
+                                                <p class="mb-1"><strong>Mensagem:</strong> {{ status.api.message }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Status do Banco de Dados -->
+                        {% if status.database %}
+                            <h5 class="border-bottom pb-2">Banco de Dados</h5>
+                            <div class="card mb-4 
+                                {% if status.database.status == 'online' %}
+                                    border-success
+                                {% else %}
+                                    border-danger
+                                {% endif %}">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Status:</strong> 
+                                                {% if status.database.status == 'online' %}
+                                                    <span class="text-success">
+                                                        <i class="fas fa-check-circle"></i> Online
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-times-circle"></i> Offline
+                                                    </span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Versão:</strong> {{ status.database.version|default:"N/A" }}</p>
+                                            {% if status.database.tables %}
+                                                <p class="mb-1"><strong>Tabelas:</strong> {{ status.database.tables|length }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Status do Redis/Cache -->
+                        {% if status.redis or status.cache %}
+                            {% if status.redis %}
+                                {% with cache_info=status.redis %}
+                                    <h5 class="border-bottom pb-2">Redis</h5>
+                                {% endwith %}
+                            {% else %}
+                                {% with cache_info=status.cache %}
+                                    <h5 class="border-bottom pb-2">Cache</h5>
+                                {% endwith %}
+                            {% endif %}
+                            
+                            <div class="card mb-4 
+                                {% if status.redis.status == 'online' or status.cache.status == 'online' %}
+                                    border-success
+                                {% else %}
+                                    border-danger
+                                {% endif %}">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Status:</strong> 
+                                                {% if status.redis.status == 'online' or status.cache.status == 'online' %}
+                                                    <span class="text-success">
+                                                        <i class="fas fa-check-circle"></i> Online
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-times-circle"></i> Offline
+                                                    </span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Versão:</strong> 
+                                                {% if status.redis %}
+                                                    {{ status.redis.version|default:"N/A" }}
+                                                {% else %}
+                                                    {{ status.cache.version|default:"N/A" }}
+                                                {% endif %}
+                                            </p>
+                                            {% if status.redis.message or status.cache.message %}
+                                                <p class="mb-1"><strong>Mensagem:</strong> 
+                                                    {% if status.redis.message %}
+                                                        {{ status.redis.message }}
+                                                    {% else %}
+                                                        {{ status.cache.message }}
+                                                    {% endif %}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Status do RabbitMQ -->
+                        {% if status.rabbitmq %}
+                            <h5 class="border-bottom pb-2">RabbitMQ</h5>
+                            <div class="card mb-4 
+                                {% if status.rabbitmq.status == 'online' %}
+                                    border-success
+                                {% else %}
+                                    border-danger
+                                {% endif %}">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Status:</strong> 
+                                                {% if status.rabbitmq.status == 'online' %}
+                                                    <span class="text-success">
+                                                        <i class="fas fa-check-circle"></i> Online
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-times-circle"></i> Offline
+                                                    </span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Versão:</strong> {{ status.rabbitmq.version|default:"N/A" }}</p>
+                                            {% if status.rabbitmq.message %}
+                                                <p class="mb-1"><strong>Mensagem:</strong> {{ status.rabbitmq.message }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Status geral do sistema -->
+                        <div class="alert 
+                            {% if status.todos_servicos_online %}
+                                alert-success
+                            {% else %}
+                                alert-warning
+                            {% endif %}">
+                            {% if status.todos_servicos_online %}
+                                <i class="fas fa-check-circle"></i> Todos os sistemas estão operacionais.
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle"></i> Atenção: Um ou mais serviços estão offline.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Caso não tenha dados de status -->
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Não foi possível obter informações sobre o status do sistema.
+                </div>
+            {% endif %}
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> Informações sobre o RabbitMQ
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>O RabbitMQ é um sistema de mensageria que permite processamento assíncrono na aplicação. As seguintes funcionalidades dependem do RabbitMQ:</p>
+                    
+                    <ul>
+                        <li><strong>Check-in em Massa</strong>: Processamento de check-ins de múltiplos alunos simultaneamente.</li>
+                        <li><strong>Relatórios Diários</strong>: Geração de relatórios de frequência em segundo plano.</li>
+                        <li><strong>Modelo de Predição</strong>: Treinamento e atualização do modelo de predição de churn.</li>
+                    </ul>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Para que essas funcionalidades estejam disponíveis, é necessário que:
+                        <ol>
+                            <li>O serviço RabbitMQ esteja em execução.</li>
+                            <li>O worker para processamento das filas esteja ativo.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Script para auto-refresh -->
+<script>
+    // Auto-refresh a cada 30 segundos
+    setTimeout(function() {
+        window.location.reload();
+    }, 30000);
+</script>
+{% endblock %} 

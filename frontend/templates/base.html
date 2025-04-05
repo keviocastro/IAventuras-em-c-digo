@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Monitoramento de Academia{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            padding-top: 56px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .content {
+            flex: 1;
+        }
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .sidebar .nav-link {
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #e9ecef;
+        }
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 1rem 0;
+            margin-top: auto;
+        }
+        .nav-section {
+            border-top: 1px solid #ddd;
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+        .nav-section-title {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #6c757d;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- CSRF Token oculto -->
+    {% csrf_token %}
+    
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'dashboard:index' %}">
+                <i class="fas fa-dumbbell"></i> GymMonitor
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item non-auth-required">
+                        <a class="nav-link" href="{% url 'dashboard:login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item auth-required">
+                        <a class="nav-link" href="{% url 'dashboard:checkin' %}">
+                            <i class="fas fa-sign-in-alt"></i> Checkin
+                        </a>
+                    </li>
+                    <li class="nav-item auth-required">
+                        <a class="nav-link" href="{% url 'dashboard:lista_alunos' %}">
+                            <i class="fas fa-users"></i> Alunos
+                        </a>
+                    </li>
+                    <li class="nav-item auth-required">
+                        <a class="nav-link" href="{% url 'dashboard:cadastro_aluno' %}">
+                            <i class="fas fa-user-plus"></i> Cadastrar
+                        </a>
+                    </li>
+                    <li class="nav-item auth-required">
+                        <a class="nav-link" href="#" id="logout-btn-nav">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid content">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar d-md-block d-none">
+                <div class="position-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item auth-required">
+                            <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard:index' %}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item non-auth-required">
+                            <a class="nav-link {% if request.path == '/login/' %}active{% endif %}" href="{% url 'dashboard:login' %}">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item auth-required">
+                            <a class="nav-link {% if '/checkin/' in request.path and not '/checkin-batch/' in request.path %}active{% endif %}" href="{% url 'dashboard:checkin' %}">
+                                <i class="fas fa-sign-in-alt"></i> Registrar Checkin
+                            </a>
+                        </li>
+                        <li class="nav-item auth-required">
+                            <a class="nav-link {% if '/alunos/' in request.path and not '/cadastro/' in request.path %}active{% endif %}" href="{% url 'dashboard:lista_alunos' %}">
+                                <i class="fas fa-users"></i> Lista de Alunos
+                            </a>
+                        </li>
+                        <li class="nav-item auth-required">
+                            <a class="nav-link {% if '/cadastro/' in request.path %}active{% endif %}" href="{% url 'dashboard:cadastro_aluno' %}">
+                                <i class="fas fa-user-plus"></i> Cadastrar Aluno
+                            </a>
+                        </li>
+                        <li class="nav-item auth-required">
+                            <a class="nav-link" href="{% url 'dashboard:cadastro_aluno_sintetico' %}">
+                                <div class="sb-nav-link-icon"><i class="fas fa-flask"></i></div>
+                                Aluno Sintético
+                            </a>
+                        </li>
+                        
+                        <!-- Seção RabbitMQ e Processamento Assíncrono -->
+                        <div class="nav-section">
+                            <div class="nav-section-title">
+                                <i class="fas fa-rabbit"></i> RabbitMQ
+                            </div>
+                            <li class="nav-item">
+                                <a class="nav-link {% if '/modelo-churn/' in request.path %}active{% endif %}" href="{% url 'dashboard:estatisticas_modelo' %}">
+                                    <i class="fas fa-brain"></i> Modelo de Churn
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if '/checkin-batch/' in request.path %}active{% endif %}" href="{% url 'dashboard:checkin_batch' %}">
+                                    <i class="fas fa-users-cog"></i> Checkin em Massa
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if '/relatorios/' in request.path %}active{% endif %}" href="{% url 'dashboard:relatorios' %}">
+                                    <i class="fas fa-chart-bar"></i> Relatórios
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if '/status/' in request.path %}active{% endif %}" href="{% url 'dashboard:status_sistema' %}">
+                                    <i class="fas fa-server"></i> Status do Sistema
+                                </a>
+                            </li>
+                        </div>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer border-top text-center">
+        <div class="container">
+            <span class="text-muted">Sistema de Monitoramento de Academia &copy; 2023</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Auth JS -->
+    <script>
+        // Função para verificar se o usuário está autenticado
+        function isAuthenticated() {
+            return localStorage.getItem('access_token') !== null;
+        }
+        
+        // Função para obter o token JWT
+        function getToken() {
+            return localStorage.getItem('access_token');
+        }
+        
+        // Função global para fazer requisições autenticadas
+        window.authFetch = async function(url, options = {}) {
+            if (isAuthenticated()) {
+                options.headers = options.headers || {};
+                options.headers['Authorization'] = `Bearer ${getToken()}`;
+            }
+            return fetch(url, options);
+        };
+        
+        // Sincronizar token com o servidor na carga inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            // Se o usuário estiver autenticado, enviar o token para o servidor
+            if (isAuthenticated()) {
+                const token = getToken();
+                
+                // Tentar enviar o token para o servidor para sincronização
+                fetch('/sync-token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                    },
+                    body: JSON.stringify({ token: token })
+                }).catch(error => {
+                    console.error('Erro ao sincronizar token:', error);
+                });
+            }
+        });
+        
+        // Interceptor para adicionar o token JWT a todas as requisições
+        (function() {
+            // Armazenar o método fetch original
+            const originalFetch = window.fetch;
+            
+            // Sobrescrever o método fetch para adicionar o token
+            window.fetch = function(url, options = {}) {
+                // Se o usuário estiver autenticado, adicionar o token à requisição
+                if (isAuthenticated()) {
+                    const token = getToken();
+                    console.log(`Adicionando token às requisições para: ${url}`);
+                    options.headers = options.headers || {};
+                    options.headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                // Chamar o método fetch original
+                return originalFetch(url, options)
+                    .then(response => {
+                        // Se receber 401 (Unauthorized), limpar o token e redirecionar para login
+                        if (response.status === 401) {
+                            console.error('Token expirado ou inválido - redirecionando para login');
+                            localStorage.removeItem('access_token');
+                            sessionStorage.removeItem('user_info');
+                            window.location.href = '/login/';
+                            return Promise.reject('Token expirado ou inválido');
+                        }
+                        return response;
+                    });
+            };
+        })();
+        
+        // Verificar se há um botão de logout e adicionar evento de clique
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logout-btn');
+            const logoutBtnNav = document.getElementById('logout-btn-nav');
+            
+            function handleLogout() {
+                localStorage.removeItem('access_token');
+                sessionStorage.removeItem('user_info');
+                window.location.href = '{% url "dashboard:login" %}';
+            }
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+            
+            if (logoutBtnNav) {
+                logoutBtnNav.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleLogout();
+                });
+            }
+            
+            // Mostrar/ocultar links baseado no estado de autenticação
+            const authLinks = document.querySelectorAll('.auth-required');
+            const nonAuthLinks = document.querySelectorAll('.non-auth-required');
+            
+            if (isAuthenticated()) {
+                authLinks.forEach(link => link.style.display = 'block');
+                nonAuthLinks.forEach(link => link.style.display = 'none');
+            } else {
+                authLinks.forEach(link => link.style.display = 'none');
+                nonAuthLinks.forEach(link => link.style.display = 'block');
+            }
+        });
+    </script>
+    <!-- Custom JS -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

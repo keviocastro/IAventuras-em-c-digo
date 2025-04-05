@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Estatísticas do Modelo de Churn | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">
+        <i class="fas fa-brain"></i> Estatísticas do Modelo de Churn
+    </h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i> Modelos Treinados
+                        </h5>
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" name="treinar_modelo" class="btn btn-sm btn-success">
+                                <i class="fas fa-sync-alt"></i> Treinar Novo Modelo
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if mensagem_erro %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> {{ mensagem_erro }}
+                        </div>
+                    {% endif %}
+                    
+                    {% if modelos %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Data de Criação</th>
+                                        <th>Amostras</th>
+                                        <th>Acurácia</th>
+                                        <th>Precisão</th>
+                                        <th>Recall</th>
+                                        <th>F1-Score</th>
+                                        <th>AUC</th>
+                                        <th>Versão</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for modelo in modelos %}
+                                        <tr>
+                                            <td>{{ modelo.id }}</td>
+                                            <td>{{ modelo.data_criacao_formatada }}</td>
+                                            <td>{{ modelo.total_amostras_formatado }}</td>
+                                            <td>{{ modelo.acuracia_pct }}</td>
+                                            <td>{{ modelo.precisao_pct }}</td>
+                                            <td>{{ modelo.recall_pct }}</td>
+                                            <td>{{ modelo.f1_score_pct }}</td>
+                                            <td>{{ modelo.auc_pct }}</td>
+                                            <td>{{ modelo.versao_modelo }}</td>
+                                            <td>
+                                                <a href="{% url 'dashboard:detalhe_modelo' modelo.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-search"></i> Detalhes
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Nenhum modelo treinado disponível.
+                            <p class="mt-2">Use o botão "Treinar Novo Modelo" para criar o primeiro modelo.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-info-circle"></i> Sobre o Modelo de Churn
+            </h5>
+        </div>
+        <div class="card-body">
+            <p>
+                O modelo de previsão de churn é responsável por identificar alunos com maior probabilidade de cancelar a matrícula
+                da academia. Esta página apresenta estatísticas e métricas de desempenho dos modelos treinados.
+            </p>
+            
+            <h6 class="mt-4 mb-3"><i class="fas fa-list-ul"></i> Características do modelo:</h6>
+            <ul>
+                <li><strong>Algoritmo:</strong> Random Forest Classifier com balanceamento de classes</li>
+                <li><strong>Features:</strong> Frequência semanal, tempo desde a última visita, duração média das visitas, plano, etc.</li>
+                <li><strong>Treinamento:</strong> Processamento assíncrono via RabbitMQ</li>
+                <li><strong>Resultados:</strong> As probabilidades calculadas são utilizadas no dashboard e nas páginas de detalhes dos alunos</li>
+            </ul>
+            
+            <h6 class="mt-4 mb-3"><i class="fas fa-chart-bar"></i> Métricas de avaliação:</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul>
+                        <li><strong>Acurácia:</strong> Proporção de previsões corretas em relação ao total</li>
+                        <li><strong>Precisão:</strong> Proporção de verdadeiros positivos em relação ao total de positivos previstos</li>
+                        <li><strong>Recall:</strong> Proporção de verdadeiros positivos em relação ao total de positivos reais</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul>
+                        <li><strong>F1-Score:</strong> Média harmônica entre precisão e recall</li>
+                        <li><strong>AUC:</strong> Área sob a curva ROC, medindo o desempenho geral do classificador</li>
+                        <li><strong>Matriz de Confusão:</strong> Visualização dos acertos e erros do modelo</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle"></i> O desempenho do modelo depende da quantidade e qualidade dos dados disponíveis.
+                Recomenda-se pelo menos 10 alunos com histórico completo para um treinamento eficaz.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

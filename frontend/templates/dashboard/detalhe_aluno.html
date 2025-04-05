@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Aluno - {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-user"></i> Detalhes do Aluno</h1>
+        <div>
+            <a href="{% url 'dashboard:lista_alunos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    {% if mensagem_erro %}
+        <div class="alert alert-danger">{{ mensagem_erro }}</div>
+    {% endif %}
+    
+    {% if aluno %}
+        <div class="row">
+            <!-- Informações básicas do aluno -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-id-card"></i> Informações Pessoais</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Nome:</strong> {{ aluno.nome }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Email:</strong> {{ aluno.email }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Telefone:</strong> {{ aluno.telefone|default:"Não informado" }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Data de Nascimento:</strong> {{ aluno.data_nascimento|date:"d/m/Y"|default:"Não informada" }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Data de Inscrição:</strong> {{ aluno.data_inscricao|date:"d/m/Y" }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Status:</strong> 
+                            {% if aluno.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informações do plano -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-file-contract"></i> Plano</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if aluno.plano %}
+                            <div class="mb-3">
+                                <strong>Nome do Plano:</strong> {{ aluno.plano.nome }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Descrição:</strong> {{ aluno.plano.descricao|default:"Sem descrição" }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Valor Mensal:</strong> R$ {{ aluno.plano.valor_mensal|floatformat:2 }}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                Este aluno não possui um plano associado.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Informações de risco de churn -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-line"></i> Risco de Churn</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if churn_info %}
+                            <div class="mb-3">
+                                <strong>Probabilidade:</strong>
+                                <div class="d-flex align-items-center mt-2">
+                                    {% with prob=churn_info.probabilidade_churn %}
+                                        <div class="progress flex-grow-1 me-2" style="height: 10px;">
+                                            <div class="progress-bar 
+                                                    {% if prob < 0.3 %}bg-success
+                                                    {% elif prob < 0.7 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {{ prob|floatformat:0 }}%;"
+                                                aria-valuenow="{{ prob|floatformat:0 }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="ms-1">{{ prob|floatformat:2 }}</span>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            
+                            {% if churn_info.ultima_visita %}
+                                <div class="mb-3">
+                                    <strong>Última Visita:</strong> {{ churn_info.ultima_visita|date:"d/m/Y H:i" }}
+                                    {% if churn_info.dias_desde_ultima_visita %}
+                                        ({{ churn_info.dias_desde_ultima_visita }} dias atrás)
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            
+                            {% if churn_info.fatores_risco %}
+                                <div class="mb-3">
+                                    <strong>Fatores de Risco:</strong>
+                                    <ul class="list-group mt-2">
+                                        {% for fator in churn_info.fatores_risco %}
+                                            <li class="list-group-item list-group-item-warning">{{ fator }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                            
+                            {% if churn_info.recomendacoes %}
+                                <div class="mb-3">
+                                    <strong>Recomendações:</strong>
+                                    <ul class="list-group mt-2">
+                                        {% for recomendacao in churn_info.recomendacoes %}
+                                            <li class="list-group-item list-group-item-info">{{ recomendacao }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                Informações de risco de churn não disponíveis.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botões de ações -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tools"></i> Ações</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{% url 'dashboard:frequencia_aluno' aluno.id %}" class="btn btn-primary">
+                                <i class="fas fa-calendar-check"></i> Ver Frequência
+                            </a>
+                            <a href="{% url 'dashboard:risco_churn_aluno' aluno.id %}" class="btn btn-warning">
+                                <i class="fas fa-chart-line"></i> Análise de Churn
+                            </a>
+                            <form id="quickCheckin" method="post" action="{% url 'dashboard:checkin' %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="aluno_id" value="{{ aluno.id }}">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-sign-in-alt"></i> Registrar Check-in
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-danger">
+            Aluno não encontrado ou erro ao carregar dados.
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

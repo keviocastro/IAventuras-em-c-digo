@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios e Modelo | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">
+        <i class="fas fa-chart-bar"></i> Relatórios e Atualizações
+    </h2>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt"></i> Relatório Diário de Frequência
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Solicite a geração de um relatório diário de frequência dos alunos. O processamento ocorre em segundo plano com RabbitMQ.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="data_relatorio" class="form-label">Data do Relatório</label>
+                            <input type="date" class="form-control" id="data_relatorio" name="data_relatorio" value="{{ data_hoje }}">
+                            <div class="form-text">Se não informada, será usada a data atual.</div>
+                        </div>
+                        <button type="submit" name="gerar_relatorio" class="btn btn-primary">
+                            <i class="fas fa-file-export"></i> Gerar Relatório
+                        </button>
+                    </form>
+                    
+                    {% if resposta_relatorio %}
+                    <div class="alert alert-success mt-3">
+                        <h5>Resposta do Servidor:</h5>
+                        <pre class="mb-0 bg-light p-2 rounded">{{ resposta_relatorio }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Lista de Relatórios Gerados -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list"></i> Relatórios Disponíveis
+                        </h5>
+                        <button onclick="window.location.reload()" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if relatorios_gerados %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data do Relatório</th>
+                                        <th>Gerado em</th>
+                                        <th>Tamanho</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rel in relatorios_gerados %}
+                                        <tr>
+                                            <td>{{ rel.data_relatorio }}</td>
+                                            <td>{{ rel.data_geracao|slice:":19"|date:"d/m/Y H:i:s" }}</td>
+                                            <td>{{ rel.tamanho_bytes|filesizeformat }}</td>
+                                            <td>
+                                                <a href="{% url 'dashboard:download_relatorio' rel.arquivo %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-download"></i> Download
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Nenhum relatório disponível.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-2 text-muted small">
+                        <i class="fas fa-info-circle"></i> Os relatórios são gerados em formato CSV e podem ser abertos no Excel ou qualquer editor de planilhas.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain"></i> Atualização do Modelo de Churn
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Solicite o treinamento e atualização do modelo de predição de churn (desistência) dos alunos. Este processo é executado em segundo plano com RabbitMQ.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> O modelo será treinado com os dados atuais de frequência e características dos alunos.
+                        </div>
+                        
+                        <button type="submit" name="atualizar_modelo" class="btn btn-success">
+                            <i class="fas fa-sync-alt"></i> Atualizar Modelo
+                        </button>
+                    </form>
+                    
+                    {% if resposta_modelo %}
+                    <div class="alert alert-success mt-3">
+                        <h5>Resposta do Servidor:</h5>
+                        <pre class="mb-0 bg-light p-2 rounded">{{ resposta_modelo }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator"></i> Calcular Probabilidades de Churn
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Solicite o cálculo das probabilidades de churn para todos os alunos utilizando o modelo atual. Este processo é executado em segundo plano com RabbitMQ.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Certifique-se que o modelo já foi treinado antes de calcular as probabilidades.
+                        </div>
+                        
+                        <button type="submit" name="calcular_probabilidades" class="btn btn-warning">
+                            <i class="fas fa-users"></i> Calcular Probabilidades
+                        </button>
+                    </form>
+                    
+                    {% if resposta_probabilidades %}
+                    <div class="alert alert-success mt-3">
+                        <h5>Resposta do Servidor:</h5>
+                        <pre class="mb-0 bg-light p-2 rounded">{{ resposta_probabilidades }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-info-circle"></i> Sobre o Processamento Assíncrono
+            </h5>
+        </div>
+        <div class="card-body">
+            <p>As operações de geração de relatórios e atualização do modelo são processadas de forma assíncrona usando RabbitMQ. Isso significa que:</p>
+            
+            <ul>
+                <li>As solicitações são enviadas para uma fila de mensagens que serão processadas em segundo plano.</li>
+                <li>A resposta é imediata, mesmo que o processamento leve mais tempo.</li>
+                <li>O servidor pode processar múltiplas solicitações sem sobrecarregar a interface ou bloquear a aplicação.</li>
+                <li>Os resultados do processamento são registrados nos logs do sistema.</li>
+                <li>Os relatórios gerados ficam disponíveis para download na seção "Relatórios Disponíveis".</li>
+            </ul>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> Certifique-se de que o worker do RabbitMQ está em execução para processar as solicitações.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

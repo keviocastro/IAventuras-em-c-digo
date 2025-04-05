@@ -1,0 +1,1 @@
+# Pacote de workers para processamento assíncrono 

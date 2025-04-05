@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkin - Academia{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4"><i class="fas fa-sign-in-alt"></i> Registrar Checkin</h1>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-sign-in-alt me-1"></i>
+                    Registrar Entrada/Saída
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="aluno_id" class="form-label">Selecione o Aluno</label>
+                            <select class="form-select" id="aluno_id" name="aluno_id" required>
+                                <option value="" selected disabled>-- Selecione um aluno --</option>
+                                {% for aluno in alunos %}
+                                    <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
+                                {% empty %}
+                                    <option value="" disabled>Nenhum aluno disponível</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Registrar Checkin
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Informações
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">
+                        <h5 class="alert-heading">Como funciona o checkin</h5>
+                        <p>O sistema de checkin é simples:</p>
+                        <ul>
+                            <li>Para registrar a <strong>entrada</strong> de um aluno, basta selecioná-lo e clicar em "Registrar Checkin".</li>
+                            <li>Se o aluno já estiver na academia (com entrada registrada), ao realizar um novo checkin será registrada a <strong>saída</strong>.</li>
+                            <li>O tempo de permanência é calculado automaticamente.</li>
+                        </ul>
+                        <hr>
+                        <p class="mb-0">Este sistema ajuda a monitorar a frequência dos alunos e é essencial para a análise de risco de desistência.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alunos atualmente na academia -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-users me-1"></i>
+                            Alunos Atualmente na Academia
+                            <span class="badge bg-light text-dark ms-2">{{ total_ativos }}</span>
+                        </div>
+                        {% if total_ativos > 0 %}
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" name="fechar_todos" class="btn btn-warning btn-sm" 
+                                    onclick="return confirm('Tem certeza que deseja registrar a saída de todos os alunos? Esta ação não pode ser desfeita.')">
+                                <i class="fas fa-sign-out-alt"></i> Fechar Todos os Check-ins
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if checkins_ativos %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Aluno</th>
+                                        <th>Tempo na Academia</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for checkin in checkins_ativos %}
+                                        <tr>
+                                            <td>{{ checkin.id }}</td>
+                                            <td>{{ checkin.nome_aluno }}</td>
+                                            <td id="tempo-{{ checkin.id }}" data-entrada="{{ checkin.data_entrada }}">
+                                                Calculando...
+                                            </td>
+                                            <td>
+                                                <form method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="aluno_id" value="{{ checkin.aluno_id }}">
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-sign-out-alt"></i> Registrar Saída
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Não há alunos na academia no momento.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para calcular o tempo na academia em tempo real
+    function atualizarTempoNaAcademia() {
+        const agora = new Date();
+        
+        document.querySelectorAll('[id^="tempo-"]').forEach(element => {
+            const dataEntrada = new Date(element.dataset.entrada);
+            const diferencaMs = agora - dataEntrada;
+            
+            // Calcular horas, minutos e segundos
+            const horas = Math.floor(diferencaMs / (1000 * 60 * 60));
+            const minutos = Math.floor((diferencaMs % (1000 * 60 * 60)) / (1000 * 60));
+            const segundos = Math.floor((diferencaMs % (1000 * 60)) / 1000);
+            
+            // Formatar o tempo
+            element.textContent = 
+                (horas < 10 ? '0' + horas : horas) + ':' + 
+                (minutos < 10 ? '0' + minutos : minutos) + ':' + 
+                (segundos < 10 ? '0' + segundos : segundos);
+        });
+    }
+    
+    // Atualizar a cada segundo
+    setInterval(atualizarTempoNaAcademia, 1000);
+    
+    // Inicializar
+    atualizarTempoNaAcademia();
+</script>
+{% endblock %}

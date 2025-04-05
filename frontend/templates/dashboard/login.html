@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Login - GymMonitor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-sign-in-alt"></i> Login</h5>
+            </div>
+            <div class="card-body">
+                <div id="login-alert" class="alert alert-danger d-none" role="alert"></div>
+                
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuário</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Digite seu nome de usuário" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Digite sua senha" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Entrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <small class="text-muted">Use admin/admin para o primeiro acesso</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Se o usuário já estiver autenticado, redirecionar para a dashboard
+        if (localStorage.getItem('access_token')) {
+            window.location.href = '{% url "dashboard:index" %}';
+            return;
+        }
+        
+        // Obter referências para o formulário e para o alerta
+        const loginForm = document.getElementById('login-form');
+        const loginAlert = document.getElementById('login-alert');
+        
+        // Adicionar evento de envio do formulário
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Obter os valores do formulário
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Ocultar alerta anterior
+            loginAlert.classList.add('d-none');
+            
+            try {
+                // Exibir mensagem de carregamento
+                loginAlert.textContent = 'Autenticando...';
+                loginAlert.className = 'alert alert-info';
+                loginAlert.classList.remove('d-none');
+                
+                // Enviar requisição para o endpoint de autenticação
+                const response = await fetch('/auth/token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                // Verificar se a requisição foi bem-sucedida
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Armazenar o token JWT no localStorage
+                    localStorage.setItem('access_token', data.access_token);
+                    
+                    // Buscar informações do usuário
+                    loginAlert.textContent = 'Obtendo informações do usuário...';
+                    const userInfoResponse = await fetch('/auth/me/', {
+                        headers: {
+                            'Authorization': `Bearer ${data.access_token}`
+                        }
+                    });
+                    
+                    if (userInfoResponse.ok) {
+                        const userInfo = await userInfoResponse.json();
+                        sessionStorage.setItem('user_info', JSON.stringify(userInfo));
+                    }
+                    
+                    // Redirecionar para a dashboard
+                    loginAlert.textContent = 'Login realizado com sucesso! Redirecionando...';
+                    loginAlert.className = 'alert alert-success';
+                    setTimeout(() => {
+                        window.location.href = '{% url "dashboard:index" %}';
+                    }, 500);
+                } else {
+                    // Tentar obter informações detalhadas do erro
+                    let errorMessage = 'Credenciais inválidas. Por favor, tente novamente.';
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.detail) {
+                            errorMessage = errorData.detail;
+                        }
+                    } catch (jsonError) {
+                        errorMessage = `Erro ${response.status}: ${response.statusText}`;
+                    }
+                    
+                    // Exibir mensagem de erro
+                    loginAlert.textContent = errorMessage;
+                    loginAlert.className = 'alert alert-danger';
+                    loginAlert.classList.remove('d-none');
+                }
+            } catch (error) {
+                // Exibir mensagem de erro em caso de falha na requisição
+                console.error('Erro ao realizar login:', error);
+                loginAlert.textContent = `Erro ao conectar-se ao servidor: ${error.message}. Por favor, tente novamente mais tarde.`;
+                loginAlert.className = 'alert alert-danger';
+                loginAlert.classList.remove('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %} 
