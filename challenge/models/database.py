@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 from dotenv import load_dotenv
 
@@ -11,7 +10,9 @@ load_dotenv()
 PASSWORD = os.getenv("DB_PASSWORD", "")
 
 # Configuração de conexão
-SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{PASSWORD}@localhost:5432/"
+SQLALCHEMY_DATABASE_URL = (
+    f"postgresql://postgres:{PASSWORD}@localhost:5432/postgres"
+)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

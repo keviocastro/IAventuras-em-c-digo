@@ -9,3 +9,4 @@ format = 'ruff check . --fix && ruff format .'
 [tool.ruff]
 line-length = 79
 extend-exclude = ['migrations']
+lint.ignore = ["F401"]

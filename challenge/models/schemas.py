@@ -17,7 +17,7 @@ class AlunoCreate(AlunoBase):
 
 class AlunoResponse(AlunoBase):
     id: int
-    data_inscricao: datetime
+    data_cadastro: datetime
 
     class Config:
         from_attributes = True
