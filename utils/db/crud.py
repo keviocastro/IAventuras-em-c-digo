@@ -106,7 +106,7 @@ class PostgreSQLDatabase:
             self.connection.commit()
             logging.info("Data inserted!")
         except Exception as e:
-            logging.error(f"Error: {e}")
+            logging.error(f"Insert Error: {e}")
     
     def read(self, table_name, cols="*", condition=None):
         """

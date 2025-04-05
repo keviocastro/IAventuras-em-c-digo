@@ -1,15 +1,16 @@
 from fastapi import FastAPI
 from fastapi import Form
+from pydantic import BaseModel
 import pandas as pd
 import logging
 import pickle
 
-from db.crud import PostgreSQLDatabase
-from config.constants import EnvVars, DatetimeFormats
+from utils.db.crud import PostgreSQLDatabase
+from config.project_constants import EnvVars
+from config.project_constants import DatetimeFormats as dt
 
 env = EnvVars()
 db_password = env.get_var("DB_PASSWORD")
-dt =    DatetimeFormats()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 db = PostgreSQLDatabase(
@@ -25,21 +26,72 @@ with open("src/models/model.pkl", "rb") as f:
 
 app = FastAPI()
 
+class Aluno(BaseModel):
+    name: str
+    age: int
+
+class Planos(BaseModel):
+    name: str
+    type: str
+    price: float
+
+class Matriculas(BaseModel):
+    attender_id: int
+    plan_id: int
+    status: bool
+
 @app.post("/aluno/registro")
-def register(name: str = Form(...), age: int = Form(...)):
+def register(aluno: Aluno, plano: Planos, matricula: Matriculas):
     try:
+        if not db.connect_db():
+            logging.error("Erro to conect Database")
+            return {"status": "erro", "mensagem": "Erro ao conectar ao banco de dados"}
+
+        db.cursor.execute(
+            """
+            INSERT INTO alunos (nome_aluno, idade_aluno)
+            VALUES (%s, %s)
+            RETURNING id_aluno
+            """,
+            (aluno.name, aluno.age)
+        )
+        id_aluno = db.cursor.fetchone()[0]
+
+        existing_plan = db.read(
+            table_name="planos",
+            cols=["id_plano"],
+            condition=f"nome_plano = '{plano.name}'"
+        )
+
+        if existing_plan:
+            id_plano = existing_plan[0][0]
+        else:
+            db.cursor.execute(
+                """
+                INSERT INTO planos (nome_plano, tipo_plano, valor_plano)
+                VALUES (%s, %s, %s)
+                RETURNING id_plano
+                """,
+                (plano.name, plano.type, plano.price)
+            )
+            id_plano = db.cursor.fetchone()[0]
+
         db.insert(
-            "alunos",
+            "matriculas",
             {
-                "nome_aluno": name,
-                "idade_aluno": age
+                "id_aluno": id_aluno,
+                "id_plano": id_plano,
+                "data_inicio": dt.get_datetime(),
+                "data_fim": dt.get_datetime_plus_6_months(),
+                "ativa": matricula.status
             }
         )
+
+        db.close_db()
         logging.info("A new gym-attender has been successfully registered.")
         return {"status": "sucesso", "mensagem": "Aluno registrado com sucesso"}
     except Exception as e:
-        logging.error(f"Error: {e}")
-
+        logging.error(f"Register Error: {e}")
 
 @app.post("/aluno/checkin")
 def checkin(id_aluno: int):
@@ -50,7 +102,6 @@ def checkin(id_aluno: int):
             "data_checkin": dt.get_datetime()
         }
     )
-
 
 @app.get("/aluno/{id_aluno}/frequencia")
 def get_frequency(id_aluno: int):
