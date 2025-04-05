@@ -1,7 +1,7 @@
 # Este script representa apenas exemplos de uso da minha implementação do banco de dados
 
 from utils.db.crud import PostgreSQLDatabase
-from config.constants import EnvVars
+from config.project_constants import EnvVars
 
 env = EnvVars()
 db_password = env.get_var("DB_PASSWORD")
