@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% load dashboard_filters %}
+
+{% block title %}Dashboard - Academia{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Checkin Rápido</h5>
+                            <p class="card-text">Registrar entrada/saída de alunos</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-sign-in-alt fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'dashboard:checkin' %}">Acessar</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Alunos</h5>
+                            <p class="card-text">Gerenciar cadastro de alunos</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-users fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'dashboard:lista_alunos' %}">Acessar</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Novo Aluno</h5>
+                            <p class="card-text">Cadastrar novo aluno</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-user-plus fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'dashboard:cadastro_aluno' %}">Acessar</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-chart-line me-1"></i>
+                        Frequência Semanal
+                    </div>
+                    <button type="button" id="btn-recalcular-frequencia" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-sync-alt"></i> Recalcular
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="frequencia-container">
+                        {% if estatisticas.frequencia %}
+                            <canvas id="graficoFrequencia" width="100%" height="50"></canvas>
+                        {% else %}
+                            <div class="alert alert-info">
+                                Gráfico de frequência será exibido aqui quando conectado à API.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-chart-pie me-1"></i>
+                        Distribuição de Planos
+                    </div>
+                    <button type="button" id="btn-recalcular-planos" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-sync-alt"></i> Recalcular
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="planos-container">
+                        {% if estatisticas.planos %}
+                            <canvas id="graficoPlanos" width="100%" height="50"></canvas>
+                        {% else %}
+                            <div class="alert alert-info">
+                                Gráfico de distribuição de planos será exibido aqui quando conectado à API.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Top 10 Alunos com Maior Risco de Churn
+                </div>
+                <div class="card-body">
+                    {% if alunos_risco %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nome</th>
+                                        <th>Plano</th>
+                                        <th>Última Visita</th>
+                                        <th>Dias Inativo</th>
+                                        <th>Probabilidade</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for aluno in alunos_risco %}
+                                        <tr>
+                                            <td>{{ aluno.aluno_id }}</td>
+                                            <td>{{ aluno.nome }}</td>
+                                            <td>{{ aluno.plano_nome|default:"Sem plano" }}</td>
+                                            <td>
+                                                {% if aluno.ultima_visita != None %}
+                                                    {{ aluno.ultima_visita|slice:":10" }}
+                                                {% else %}
+                                                    Nunca
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if aluno.dias_desde_ultima_visita != None %}
+                                                    {{ aluno.dias_desde_ultima_visita }} dias
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% with prob=aluno.probabilidade_churn %}
+                                                        <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                            <div class="progress-bar 
+                                                                    {% if prob < 0.3 %}bg-success
+                                                                    {% elif prob < 0.7 %}bg-warning
+                                                                    {% else %}bg-danger{% endif %}" 
+                                                                role="progressbar" 
+                                                                style="width: {% widthratio prob 1 100 %}%;"
+                                                                aria-valuenow="{% widthratio prob 1 100 %}" 
+                                                                aria-valuemin="0" 
+                                                                aria-valuemax="100"></div>
+                                                        </div>
+                                                        <span class="ms-1">{{ prob|floatformat:2 }}</span>
+                                                    {% endwith %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'dashboard:detalhe_aluno' aluno.aluno_id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'dashboard:risco_churn_aluno' aluno.aluno_id %}" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Não há dados de risco de churn disponíveis. Verifique se o modelo foi treinado.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Variáveis globais para os gráficos
+    let graficoFrequencia = null;
+    let graficoPlanos = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar os gráficos se os dados estiverem disponíveis
+        inicializarGraficos();
+        
+        // Configurar os botões de recalcular
+        document.getElementById('btn-recalcular-frequencia').addEventListener('click', function() {
+            recalcularFrequencia();
+        });
+        
+        document.getElementById('btn-recalcular-planos').addEventListener('click', function() {
+            recalcularPlanos();
+        });
+    });
+    
+    // Função para inicializar os gráficos com os dados existentes
+    function inicializarGraficos() {
+        {% if estatisticas.frequencia %}
+        const ctxFrequencia = document.getElementById('graficoFrequencia').getContext('2d');
+        graficoFrequencia = new Chart(ctxFrequencia, {
+            type: 'line',
+            data: {
+                labels: [{% for item in estatisticas.frequencia.dias %}'{{ item }}',{% endfor %}],
+                datasets: [{
+                    label: 'Alunos por dia',
+                    data: [{% for item in estatisticas.frequencia.frequencia %}{{ item }},{% endfor %}],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Frequência de Alunos nos Últimos 7 Dias'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Número de Alunos'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Dia da Semana'
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        {% if estatisticas.planos %}
+        const ctxPlanos = document.getElementById('graficoPlanos').getContext('2d');
+        graficoPlanos = new Chart(ctxPlanos, {
+            type: 'pie',
+            data: {
+                labels: [{% for plano in estatisticas.planos.planos %}'{{ plano }}',{% endfor %}],
+                datasets: [{
+                    data: [{% for valor in estatisticas.planos.quantidades %}{{ valor }},{% endfor %}],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Distribuição de Alunos por Plano'
+                    },
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+        {% endif %}
+    }
+    
+    // Função para recalcular frequência
+    function recalcularFrequencia() {
+        window.location.href = '{% url "dashboard:index" %}?recalcular_frequencia=1';
+    }
+    
+    // Função para recalcular planos
+    function recalcularPlanos() {
+        window.location.href = '{% url "dashboard:index" %}?recalcular_planos=1';
+    }
+</script>
+{% endblock %}

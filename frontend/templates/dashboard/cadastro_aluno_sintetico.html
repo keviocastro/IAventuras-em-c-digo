@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro de Aluno Sintético - Academia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .range-value {
+        font-weight: bold;
+        min-width: 40px;
+        display: inline-block;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-flask"></i> Criar Aluno Sintético</h1>
+        <div>
+            <a href="{% url 'dashboard:lista_alunos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para Lista
+            </a>
+        </div>
+    </div>
+    
+    {% if mensagem_erro %}
+        <div class="alert alert-danger mb-4">
+            {{ mensagem_erro }}
+        </div>
+    {% endif %}
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-user-plus me-1"></i>
+            Dados Básicos do Aluno
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nome" class="form-label">Nome Completo</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="telefone" class="form-label">Telefone</label>
+                        <input type="tel" class="form-control" id="telefone" name="telefone" placeholder="(99) 99999-9999">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                        <input type="date" class="form-control datepicker" id="data_nascimento" name="data_nascimento">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="plano_id" class="form-label">Plano</label>
+                    <select class="form-select" id="plano_id" name="plano_id" required>
+                        <option value="" selected disabled>-- Selecione um plano --</option>
+                        {% for plano in planos %}
+                            <option value="{{ plano.id }}">{{ plano.nome }} - R$ {{ plano.valor_mensal|floatformat:2 }}</option>
+                        {% empty %}
+                            <option value="" disabled>Nenhum plano disponível</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <hr class="my-4">
+                
+                <h5 class="mb-3"><i class="fas fa-chart-line"></i> Parâmetros de Comportamento</h5>
+                <p class="text-muted mb-3">Configure o comportamento sintético do aluno para testar o modelo de churn</p>
+                
+                <div class="mb-3">
+                    <label for="visitas_semana" class="form-label">Média de Visitas por Semana <span class="range-value" id="visitas_value">1.5</span></label>
+                    <input type="range" class="form-range" id="visitas_semana" name="visitas_semana" min="0" max="7" step="0.5" value="1.5">
+                    <div class="d-flex justify-content-between">
+                        <small>0 (Inativo)</small>
+                        <small>3-4 (Regular)</small>
+                        <small>7 (Frequente)</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="duracao_media" class="form-label">Duração Média da Visita <span class="range-value" id="duracao_value">60</span> min</label>
+                    <input type="range" class="form-range" id="duracao_media" name="duracao_media" min="10" max="180" step="5" value="60">
+                    <div class="d-flex justify-content-between">
+                        <small>10 min (Rápida)</small>
+                        <small>60 min (Normal)</small>
+                        <small>180 min (Longa)</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="dias_desde_ultima" class="form-label">Dias Desde Última Visita <span class="range-value" id="dias_value">3</span> dias</label>
+                    <input type="range" class="form-range" id="dias_desde_ultima" name="dias_desde_ultima" min="0" max="60" step="1" value="3">
+                    <div class="d-flex justify-content-between">
+                        <small>0 (Recente)</small>
+                        <small>15-30 (Moderado)</small>
+                        <small>60 (Ausente)</small>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mb-3">
+                    <h6><i class="fas fa-info-circle"></i> Informações:</h6>
+                    <ul class="mb-0">
+                        <li>Serão gerados checkins para um período de 90 dias, respeitando a média semanal</li>
+                        <li>A última visita será exatamente há <strong id="dias_destaque">3</strong> dias atrás</li>
+                        <li>Perfil sugerido: <strong id="perfil_sugerido">Regular</strong></li>
+                        <li>A probabilidade de churn será calculada automaticamente após o cadastro</li>
+                    </ul>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="reset" class="btn btn-outline-secondary me-md-2">
+                        <i class="fas fa-undo"></i> Limpar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-flask"></i> Criar Aluno Sintético
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <i class="fas fa-info-circle me-1"></i>
+            Sobre Alunos Sintéticos
+        </div>
+        <div class="card-body">
+            <p>Os alunos sintéticos são criados com parâmetros específicos para testar o modelo de previsão de churn.</p>
+            <p>Você pode definir:</p>
+            <ul>
+                <li><strong>Visitas por semana:</strong> Quantidade média de vezes que o aluno frequenta a academia</li>
+                <li><strong>Duração da visita:</strong> Quanto tempo, em média, o aluno permanece na academia</li>
+                <li><strong>Dias desde última visita:</strong> Há quanto tempo o aluno não vai à academia</li>
+            </ul>
+            <p class="mb-0">O sistema irá gerar automaticamente um histórico de check-ins baseado nesses parâmetros para os últimos 90 dias.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializa o datepicker
+        flatpickr(".datepicker", {
+            dateFormat: "Y-m-d",
+            maxDate: "today"
+        });
+        
+        // Atualiza os valores dinâmicos dos sliders
+        function updateRangeValues() {
+            const visitas = document.getElementById('visitas_semana').value;
+            const duracao = document.getElementById('duracao_media').value;
+            const dias = document.getElementById('dias_desde_ultima').value;
+            
+            document.getElementById('visitas_value').textContent = visitas;
+            document.getElementById('duracao_value').textContent = duracao;
+            document.getElementById('dias_value').textContent = dias;
+            document.getElementById('dias_destaque').textContent = dias;
+            
+            // Determinar perfil sugerido
+            let perfil = 'Indefinido';
+            
+            if (visitas >= 5) {
+                perfil = 'Muito Ativo';
+            } else if (visitas >= 3) {
+                perfil = 'Ativo';
+            } else if (visitas >= 1.5) {
+                perfil = 'Regular';
+            } else if (visitas > 0) {
+                perfil = 'Casual';
+            } else {
+                perfil = 'Inativo';
+            }
+            
+            if (dias >= 30) {
+                perfil = 'Em Risco';
+            }
+            
+            document.getElementById('perfil_sugerido').textContent = perfil;
+        }
+        
+        // Adicionar listeners para os sliders
+        document.getElementById('visitas_semana').addEventListener('input', updateRangeValues);
+        document.getElementById('duracao_media').addEventListener('input', updateRangeValues);
+        document.getElementById('dias_desde_ultima').addEventListener('input', updateRangeValues);
+        
+        // Gerar nome aleatório para teste
+        document.getElementById('nome').value = `Aluno Teste ${Math.floor(Math.random() * 10000)}`;
+        document.getElementById('email').value = `teste${Math.floor(Math.random() * 10000)}@exemplo.com`;
+        document.getElementById('telefone').value = `(99) 9${Math.floor(Math.random() * 10000)}-${Math.floor(Math.random() * 10000)}`;
+        
+        // Inicializar valores
+        updateRangeValues();
+    });
+</script>
+{% endblock %} 

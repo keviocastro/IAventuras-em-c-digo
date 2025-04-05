@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Academia</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Barra lateral */
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: white;
+            padding-top: 20px;
+            transition: width 0.3s;
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid #444;
+            text-align: center;
+        }
+        
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        
+        .sidebar-menu li {
+            padding: 10px 20px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .sidebar-menu li a {
+            color: #ddd;
+            text-decoration: none;
+            display: block;
+            transition: color 0.3s;
+        }
+        
+        .sidebar-menu li a:hover {
+            color: #4CAF50;
+        }
+        
+        .sidebar-menu li.active {
+            background-color: #4CAF50;
+        }
+        
+        .sidebar-menu li.active a {
+            color: white;
+        }
+        
+        /* Conteúdo principal */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .header {
+            background-color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-info button {
+            margin-left: 15px;
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .user-info button:hover {
+            background-color: #45a049;
+        }
+        
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .card h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .card ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .card li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .card li a {
+            text-decoration: none;
+            color: #2980b9;
+        }
+        
+        .card li a:hover {
+            text-decoration: underline;
+        }
+        
+        .login-message {
+            text-align: center;
+            margin: 100px auto;
+            max-width: 500px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .login-message h2 {
+            color: #333;
+        }
+        
+        .login-message a {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        
+        .login-message a:hover {
+            background-color: #45a049;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Responsividade */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+            
+            .card {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra lateral - sempre visível -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Sistema de Academia</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active"><a href="/">Início</a></li>
+            <li><a href="/login">Login</a></li>
+            <li><a href="/docs">Documentação API</a></li>
+            <li id="menu-alunos" class="hidden"><a href="/api/aluno/">Alunos</a></li>
+            <li id="menu-churn" class="hidden"><a href="/docs#/churn">Análise de Churn</a></li>
+            <li id="menu-status" class="hidden"><a href="/api/status/">Status do Sistema</a></li>
+        </ul>
+    </div>
+
+    <!-- Conteúdo para usuários autenticados -->
+    <div id="auth-content" class="main-content hidden">
+        <div class="header">
+            <h1>Painel de Controle</h1>
+            <div class="user-info">
+                <span id="username-display">Usuário</span>
+                <button id="logout-btn">Sair</button>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2>Alunos</h2>
+                <ul>
+                    <li><a href="/api/aluno/" target="_blank">Listar todos os alunos</a></li>
+                    <li><a href="/docs#/alunos/criar_aluno_aluno_registro_post" target="_blank">Registrar novo aluno</a></li>
+                    <li><a href="/docs#/alunos/registrar_checkin_aluno_checkin_post" target="_blank">Registrar check-in</a></li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>Análise de Churn</h2>
+                <ul>
+                    <li><a href="/docs#/churn/calcular_probabilidade_aluno_churn_aluno__aluno_id__get" target="_blank">Verificar risco de churn</a></li>
+                    <li><a href="/docs#/churn/treinar_modelo_churn_treinar_modelo_post" target="_blank">Treinar modelo de churn</a></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Administração</h2>
+                <ul>
+                    <li><a href="/api/status/" target="_blank">Status do sistema</a></li>
+                    <li><a href="/docs" target="_blank">Documentação da API</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo para usuários não autenticados -->
+    <div id="no-auth-content" class="main-content">
+        <div class="login-message">
+            <h2>Bem-vindo ao Sistema de Academia</h2>
+            <p>Para acessar o sistema completo, faça login com suas credenciais.</p>
+            <p>Usuário padrão: <strong>admin</strong> / Senha: <strong>admin</strong></p>
+            <a href="/login">Fazer Login</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const authContent = document.getElementById('auth-content');
+            const noAuthContent = document.getElementById('no-auth-content');
+            const usernameDisplay = document.getElementById('username-display');
+            const logoutBtn = document.getElementById('logout-btn');
+            const menuAlunos = document.getElementById('menu-alunos');
+            const menuChurn = document.getElementById('menu-churn');
+            const menuStatus = document.getElementById('menu-status');
+            
+            // Verificar se o usuário está autenticado
+            const token = localStorage.getItem('access_token');
+            
+            if (token) {
+                // Mostrar conteúdo para usuários autenticados
+                authContent.classList.remove('hidden');
+                noAuthContent.classList.add('hidden');
+                
+                // Mostrar itens de menu adicionais
+                menuAlunos.classList.remove('hidden');
+                menuChurn.classList.remove('hidden');
+                menuStatus.classList.remove('hidden');
+                
+                // Obter informações do usuário
+                fetchUserInfo(token);
+            } else {
+                // Mostrar mensagem para usuários não autenticados
+                authContent.classList.add('hidden');
+                noAuthContent.classList.remove('hidden');
+                
+                // Esconder itens de menu adicionais
+                menuAlunos.classList.add('hidden');
+                menuChurn.classList.add('hidden');
+                menuStatus.classList.add('hidden');
+            }
+            
+            // Configurar botão de logout
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+            });
+        });
+        
+        async function fetchUserInfo(token) {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    document.getElementById('username-display').textContent = userData.username;
+                } else {
+                    // Token inválido ou expirado
+                    localStorage.removeItem('access_token');
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Erro ao obter informações do usuário:', error);
+            }
+        }
+    </script>
+</body>
+</html>

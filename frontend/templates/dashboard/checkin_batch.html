@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Check-in em Massa | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">
+        <i class="fas fa-users-cog"></i> Check-in em Massa
+    </h2>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-info-circle"></i> Sobre o Check-in em Massa
+            </h5>
+        </div>
+        <div class="card-body">
+            <p>Esta funcionalidade utiliza o RabbitMQ para processar o check-in de múltiplos alunos simultaneamente de forma assíncrona.</p>
+            <p>Ao contrário do check-in tradicional, que é processado imediatamente, o check-in em massa envia os dados para uma fila, que será processada em segundo plano sem bloquear a interface.</p>
+            <p>Ideal para situações com grande número de alunos, como aulas em grupo ou eventos.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Selecione os Alunos</h5>
+                </div>
+                <div class="card-body">
+                    {% if alunos %}
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <div class="form-text mb-2">Selecione os alunos para registrar check-in:</div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th width="50">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                                    </div>
+                                                </th>
+                                                <th>ID</th>
+                                                <th>Nome</th>
+                                                <th>Plano</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for aluno in alunos %}
+                                                <tr>
+                                                    <td>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input aluno-checkbox" type="checkbox" name="alunos_ids" value="{{ aluno.id }}" id="aluno-{{ aluno.id }}">
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ aluno.id }}</td>
+                                                    <td>{{ aluno.nome }}</td>
+                                                    <td>{{ aluno.plano.nome }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-users-cog"></i> Registrar Check-in em Massa
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Nenhum aluno encontrado.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> Dicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Use a caixa de seleção no topo para selecionar todos os alunos.</li>
+                        <li class="list-group-item">O processamento ocorre em segundo plano usando RabbitMQ.</li>
+                        <li class="list-group-item">Você pode verificar o status do processamento na tela de Status do Sistema.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script para selecionar/deselecionar todos os alunos
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const alunoCheckboxes = document.querySelectorAll('.aluno-checkbox');
+        
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            
+            alunoCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        });
+        
+        // Atualizar o "Selecionar Todos" se todos os individuais forem selecionados
+        alunoCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const allChecked = Array.from(alunoCheckboxes).every(cb => cb.checked);
+                selectAllCheckbox.checked = allChecked;
+            });
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Frequência do Aluno - Academia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-check"></i> Histórico de Frequência</h1>
+        <div>
+            <a href="{% url 'dashboard:detalhe_aluno' aluno_id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Perfil
+            </a>
+        </div>
+    </div>
+    
+    {% if dados %}
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar me-1"></i>
+                        Estatísticas
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Total de Visitas:
+                                <span class="badge bg-primary rounded-pill">{{ dados.total_visitas }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Média Semanal:
+                                <span class="badge bg-info rounded-pill">{{ dados.media_visitas_semanais|floatformat:1 }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Duração Média:
+                                <span class="badge bg-success rounded-pill">
+                                    {% if dados.media_duracao_minutos %}
+                                        {{ dados.media_duracao_minutos|floatformat:0 }} min
+                                    {% else %}
+                                        N/D
+                                    {% endif %}
+                                </span>
+                            </li>
+                        </ul>
+                        
+                        <div class="mt-4">
+                            <div class="progress" style="height: 25px;">
+                                {% with frequencia=dados.media_visitas_semanais %}
+                                    {% if frequencia >= 3 %}
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ frequencia|floatformat:0 }}0%;" aria-valuenow="{{ frequencia }}" aria-valuemin="0" aria-valuemax="7">
+                                            {{ frequencia|floatformat:1 }} vezes por semana
+                                        </div>
+                                    {% elif frequencia >= 1 %}
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ frequencia|floatformat:0 }}0%;" aria-valuenow="{{ frequencia }}" aria-valuemin="0" aria-valuemax="7">
+                                            {{ frequencia|floatformat:1 }} vezes por semana
+                                        </div>
+                                    {% else %}
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: 10%;" aria-valuenow="{{ frequencia }}" aria-valuemin="0" aria-valuemax="7">
+                                            {{ frequencia|floatformat:1 }} vezes por semana
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <small class="text-muted">Recomendação: pelo menos 3 vezes por semana</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Gráfico de Frequência
+                    </div>
+                    <div class="card-body">
+                        <canvas id="frequenciaChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-history me-1"></i>
+                Histórico de Checkins
+            </div>
+            <div class="card-body">
+                {% if dados.checkins %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Entrada</th>
+                                    <th>Saída</th>
+                                    <th>Duração</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for checkin in dados.checkins %}
+                                    <tr>
+                                        <td>{{ checkin.data_entrada|date:"d/m/Y" }}</td>
+                                        <td>{{ checkin.data_entrada|date:"H:i" }}</td>
+                                        <td>
+                                            {% if checkin.data_saida %}
+                                                {{ checkin.data_saida|date:"H:i" }}
+                                            {% else %}
+                                                <span class="badge bg-warning">Em andamento</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if checkin.duracao_minutos %}
+                                                {{ checkin.duracao_minutos }} min
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        Nenhum registro de checkin encontrado para este aluno.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-danger">
+            Não foi possível obter os dados de frequência ou aluno não encontrado.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if dados and dados.checkins %}
+            // Processar dados para o gráfico
+            const checkins = {{ dados.checkins|safe }};
+            const datas = [];
+            const duracoes = [];
+            
+            // Organizar por data (último mês)
+            const hoje = new Date();
+            const ultimoMes = new Date(hoje);
+            ultimoMes.setMonth(hoje.getMonth() - 1);
+            
+            // Preparar dados para o gráfico
+            checkins.forEach(function(checkin) {
+                const dataEntrada = new Date(checkin.data_entrada);
+                if (dataEntrada >= ultimoMes) {
+                    datas.push(dataEntrada.toLocaleDateString('pt-BR'));
+                    duracoes.push(checkin.duracao_minutos || 0);
+                }
+            });
+            
+            // Criar gráfico
+            const ctx = document.getElementById('frequenciaChart').getContext('2d');
+            const frequenciaChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datas,
+                    datasets: [{
+                        label: 'Duração (minutos)',
+                        data: duracoes,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Duração (minutos)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Data'
+                            }
+                        }
+                    }
+                }
+            });
+        {% endif %}
+    });
+</script>
+{% endblock %} 
