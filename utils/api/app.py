@@ -1,8 +1,10 @@
 from fastapi import (
     FastAPI,
-    Path
+    Path,
+    HTTPException
 )
 from pydantic import BaseModel
+import datetime
 import pandas as pd
 import logging
 import pickle
@@ -10,6 +12,7 @@ import pickle
 from utils.db.crud import PostgreSQLDatabase
 from config.project_constants import EnvVars
 from config.project_constants import DatetimeFormats as dt
+from utils.messaging.producer import send_to_checkin_queue
 
 env = EnvVars()
 db_password = env.get_var("DB_PASSWORD")
@@ -27,6 +30,9 @@ with open("src/models/model.pkl", "rb") as f:
     model = pickle.load(f)
 
 app = FastAPI()
+
+class CheckinPayload(BaseModel):
+    id_aluno: int
 
 class Aluno(BaseModel):
     id: int
@@ -103,24 +109,26 @@ def register(aluno: Aluno, plano: Planos, matricula: Matriculas):
         logging.error(f"Register Error: {register_error}")
 
 @app.post("/aluno/checkin")
-def checkin(aluno_id: Checkins):
-    try:
-        if not db.connect_db():
-            logging.error("Error to conect Database")
-            return {"status": "error", "mensagem": "Error to conect Database"}
+def checkin(payload: CheckinPayload):
+    aluno_id = payload.id_aluno
+    message = {
+        "id_aluno": aluno_id,
+        "timestamp_requisicao": datetime.datetime.now().isoformat()
+    }
+    logging.info(f"Recebida requisição de check-in para aluno ID: {aluno_id}")
 
-        db.insert(
-            "checkins",
-            {
-                "id_aluno": aluno_id.id,
-                "data_checkin": dt.get_datetime()
-            }
-        )
-        db.close_db()
-        logging.info("Checkin registered. Go fit!")
-        return {"status": "sucesso", "mensagem": "Checkin realizado com sucesso!"}
-    except Exception as checkin_error:
-        logging.error(f"Checkin Error: {checkin_error}")
+    try:
+        sucesso_envio = send_to_checkin_queue(message)
+        if not sucesso_envio:
+             logging.error(f"Falha ao enviar check-in para a fila para aluno ID: {aluno_id}")
+             raise HTTPException(status_code=500, detail="Erro interno ao processar o check-in. Tente novamente mais tarde.")
+
+        logging.info(f"Check-in para aluno ID: {aluno_id} enfileirado com sucesso.")
+        return {"status": "sucesso", "mensagem": "Check-in recebido e sendo processado."}
+
+    except Exception as api_error:
+        logging.error(f"Erro inesperado no endpoint /aluno/checkin: {api_error}")
+        raise HTTPException(status_code=500, detail="Erro inesperado no servidor.")
 
 @app.post("/aluno/checkout")
 def checkout(aluno_id: Checkouts):
