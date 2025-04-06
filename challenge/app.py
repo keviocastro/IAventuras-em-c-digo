@@ -1,6 +1,14 @@
 from fastapi import FastAPI
-from challenge.api.routes import router
-from challenge.models.database import Base, engine
+from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent))
+
+from api.routes import router
+from models.database import Base, engine
+import uvicorn
 
 # Criar tabelas no banco se não existirem
 Base.metadata.create_all(bind=engine)
@@ -15,7 +23,8 @@ app = FastAPI(
 # Incluir rotas
 app.include_router(router)
 
-# if __name__ == "__main__":
-#     import uvicorn
+if __name__ == "__main__":
+    # uvicorn.run(app, host="0.0.0.0", port=8000)
 
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Criar aluno de teste
+    pass

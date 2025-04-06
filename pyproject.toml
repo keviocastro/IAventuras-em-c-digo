@@ -10,3 +10,10 @@ format = 'ruff check . --fix && ruff format .'
 line-length = 79
 extend-exclude = ['migrations']
 lint.ignore = ["F401"]
+lint.external = ["**/site-packages/**"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:pydantic.*:",
+    "ignore::pydantic.PydanticDeprecatedSince20"
+]

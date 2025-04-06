@@ -1,19 +1,33 @@
+from datetime import datetime
 from http import HTTPStatus
 from fastapi import FastAPI
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Corrigir os imports - separar database de entities
-from challenge.models.database import get_db, Base, engine
-from challenge.models.entities import Plano, Aluno, CheckIn
+from models.database import get_db, Base, engine
+from models.entities import Plano, Aluno, CheckIn
 
-from challenge.models.schemas import (
+from models.schemas import (
     PlanoCreate,
     PlanoResponse,
     AlunoCreate,
     AlunoResponse,
     CheckInCreate,
     CheckInResponse,
+    CheckOutUpdate,
+    CheckInBatchCreate,
+)
+
+from rabbitmq.producers.base import (
+    publicar_checkin_ou_checkout,
+    publicar_checkins_em_massa,
+    solicitar_relatorio_diario,
+    solicitar_atualizacao_modelo_churn,
 )
 
 # Criar tabelas no banco se não existirem
@@ -28,17 +42,14 @@ def read_root():
     return {"message": "Hello World!"}
 
 
-# ---------- Rotas de Alunos -----------
+# COMPLETAR AS ROTAS PARA O CRUD
 
 
-@router.get("/alunos", response_model=list[AlunoResponse])
-def listar_alunos(db: Session = Depends(get_db)):
-    """Lista todos os alunos cadastrados"""
-    return db.query(Aluno).all()
-
-
+# Registrar um novo aluno
 @router.post(
-    "/alunos", response_model=AlunoResponse, status_code=HTTPStatus.CREATED
+    "/aluno/registro",
+    response_model=AlunoResponse,
+    status_code=HTTPStatus.CREATED,
 )
 def criar_aluno(aluno: AlunoCreate, db: Session = Depends(get_db)):
     """Cadastra um novo aluno"""
@@ -66,15 +77,143 @@ def criar_aluno(aluno: AlunoCreate, db: Session = Depends(get_db)):
     return db_aluno
 
 
-# ---------- Rotas de Planos -----------
+# Registrar entrada do aluno na academia
+@router.post(
+    "/aluno/checkin",
+    response_model=CheckInResponse,
+    status_code=HTTPStatus.CREATED,
+)
+def criar_checkin(
+    checkin: CheckInCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Cadastra um novo check-in"""
+    # Verificar se o aluno existe
+    aluno = db.query(Aluno).filter(Aluno.id == checkin.aluno_id).first()
+    if not aluno:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="Aluno não encontrado"
+        )
+
+    # Criar objeto CheckIn a partir dos dados recebidos
+    db_checkin = CheckIn(**checkin.model_dump())
+    db_checkin.data_entrada = datetime.now()
+
+    # Adicionar ao banco e commit
+    db.add(db_checkin)
+    db.commit()
+    db.refresh(db_checkin)
+
+    # Publicar evento no RabbitMQ em segundo plano
+    background_tasks.add_task(
+        publicar_checkin_ou_checkout,
+        aluno_id=db_checkin.aluno_id,
+        timestamp=db_checkin.data_entrada.isoformat(),
+        entrada=True,
+    )
+
+    return db_checkin
 
 
+# Atualizar checkin com a saída do aluno da academia
+@router.put(
+    "/aluno/checkout",
+    response_model=CheckInResponse,
+    status_code=HTTPStatus.OK,
+)
+def atualizar_checkout(
+    checkout_data: CheckOutUpdate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Atualiza o check-in com a saída do aluno"""
+    # Verificar se o aluno existe
+    aluno = db.query(Aluno).filter(Aluno.id == checkout_data.aluno_id).first()
+    if not aluno:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="Aluno não encontrado"
+        )
+
+    # Obter o último check-in do aluno
+    ultimo_checkin = (
+        db.query(CheckIn)
+        .filter(CheckIn.aluno_id == checkout_data.aluno_id)
+        .order_by(CheckIn.data_entrada.desc())
+        .first()
+    )
+
+    if not ultimo_checkin or ultimo_checkin.data_saida:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="Nenhum check-in em aberto encontrado para o aluno",
+        )
+
+    if bool(checkout_data.data_saida) != bool(checkout_data.duracao):
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="Ambos os campos data_saida e duracao devem ser informados ou nenhum deles",
+        )
+
+    ultimo_checkin.data_saida = checkout_data.data_saida or datetime.now()
+
+    ultimo_checkin.duracao = (
+        checkout_data.duracao
+        or (
+            ultimo_checkin.data_saida - ultimo_checkin.data_entrada
+        ).total_seconds()
+        / 60
+    )
+
+    db.commit()
+    db.refresh(ultimo_checkin)
+
+    # Publicar evento no RabbitMQ em segundo plano
+    background_tasks.add_task(
+        publicar_checkin_ou_checkout,
+        aluno_id=ultimo_checkin.aluno_id,
+        timestamp=ultimo_checkin.data_saida.isoformat(),
+        entrada=False,
+    )
+
+    return ultimo_checkin
+
+
+# Obter histórico de frequência
+@router.get("/aluno/{id}/frequencia")
+def listar_frequencia_aluno(id: int, db: Session = Depends(get_db)):
+    """Lista a frequência do aluno"""
+    # Verificar se o aluno existe
+    aluno = db.query(Aluno).filter(Aluno.id == id).first()
+    if not aluno:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="Aluno não encontrado"
+        )
+
+    # Obter todos os check-ins do aluno
+    checkins = db.query(CheckIn).filter(CheckIn.aluno_id == id).all()
+
+    return checkins
+
+
+# TO DO: Obter probabilidade de desistência
+
+
+# Listar todos os alunos
+@router.get("/alunos", response_model=list[AlunoResponse])
+def listar_alunos(db: Session = Depends(get_db)):
+    """Lista todos os alunos cadastrados"""
+    return db.query(Aluno).all()
+
+
+# Listar todos os planos
 @router.get("/planos", response_model=list[PlanoResponse])
 def listar_planos(db: Session = Depends(get_db)):
     """Lista todos os planos cadastrados"""
     return db.query(Plano).all()
 
 
+# Registrar um novo plano
 @router.post(
     "/planos", response_model=PlanoResponse, status_code=HTTPStatus.CREATED
 )
@@ -98,36 +237,63 @@ def criar_plano(plano: PlanoCreate, db: Session = Depends(get_db)):
     return db_plano
 
 
-# ---------- Rotas de CheckIns -----------
-
-
+# Listar todos os check-ins
 @router.get("/checkins", response_model=list[CheckInResponse])
 def listar_checkins(db: Session = Depends(get_db)):
     """Lista todos os check-ins cadastrados"""
     return db.query(CheckIn).all()
 
 
-@router.post(
-    "/checkins", response_model=CheckInResponse, status_code=HTTPStatus.CREATED
-)
-def criar_checkin(checkin: CheckInCreate, db: Session = Depends(get_db)):
-    """Cadastra um novo check-in"""
-    # Verificar se o aluno existe
-    aluno = db.query(Aluno).filter(Aluno.id == checkin.aluno_id).first()
-    if not aluno:
+# Rota para processar checkins em massa
+@router.post("/alunos/checkins/batch", status_code=HTTPStatus.ACCEPTED)
+def processar_checkins_em_massa(
+    checkins: list[CheckInBatchCreate], background_tasks: BackgroundTasks
+):
+    """Envia um lote de check-ins para processamento assíncrono"""
+    if not checkins:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, detail="Aluno não encontrado"
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="Lista de check-ins vazia",
         )
 
-    # Criar objeto CheckIn a partir dos dados recebidos
-    db_checkin = CheckIn(**checkin.model_dump())
+    # Processar os check-ins em segundo plano
+    formatted_checkins = []
+    for checkin in checkins:
+        formatted_checkins.append(
+            {
+                "aluno_id": checkin.aluno_id,
+                "timestamp": checkin.timestamp or datetime.now().isoformat(),
+                "tipo": "entrada" if checkin.entrada else "saida",
+            }
+        )
 
-    # Adicionar ao banco e commit
-    db.add(db_checkin)
-    db.commit()
-    db.refresh(db_checkin)
+    background_tasks.add_task(
+        publicar_checkins_em_massa, checkins=formatted_checkins
+    )
 
-    return db_checkin
+    return {
+        "message": f"{len(checkins)} check-ins enviados para processamento"
+    }
+
+
+# Rota para solicitar geração de relatório diário
+@router.post("/relatorios/diario", status_code=HTTPStatus.ACCEPTED)
+def gerar_relatorio_diario(
+    background_tasks: BackgroundTasks, data: str = None
+):
+    """Solicita a geração de um relatório diário de frequência"""
+    background_tasks.add_task(solicitar_relatorio_diario, data=data)
+
+    return {"message": "Solicitação de relatório diário enviada"}
+
+
+# Rota para solicitar atualização do modelo de churn
+@router.post("/modelo/churn/atualizar", status_code=HTTPStatus.ACCEPTED)
+def atualizar_modelo_churn(background_tasks: BackgroundTasks):
+    """Solicita a atualização do modelo de previsão de churn"""
+    background_tasks.add_task(solicitar_atualizacao_modelo_churn)
+
+    return {"message": "Solicitação de atualização do modelo de churn enviada"}
 
 
 app.include_router(router)

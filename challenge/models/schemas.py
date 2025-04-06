@@ -6,9 +6,13 @@ from datetime import datetime
 # === Schemas de Alunos ===
 class AlunoBase(BaseModel):
     nome: str
-    email: str
+    email: EmailStr
     telefone: Optional[str] = None
-    plano_id: int
+    data_nascimento: Optional[datetime] = None
+    sexo: Optional[str] = None
+    endereco: Optional[str] = None
+    plano_id: Optional[int] = None
+    status: Optional[str] = None
 
 
 class AlunoCreate(AlunoBase):
@@ -26,8 +30,11 @@ class AlunoResponse(AlunoBase):
 # === Schemas de Planos ===
 class PlanoBase(BaseModel):
     nome: str
-    valor: float
-    duracao_dias: int
+    descricao: Optional[str] = None
+    valor_mensal: float
+    periodo_contrato: Optional[int] = 1
+    ativo: Optional[bool] = True
+    data_criacao: Optional[datetime] = datetime.now().isoformat()
 
 
 class PlanoCreate(PlanoBase):
@@ -44,16 +51,38 @@ class PlanoResponse(PlanoBase):
 # === Schemas de CheckIns ===
 class CheckInBase(BaseModel):
     aluno_id: int
+    data_entrada: Optional[datetime] = None
+    data_saida: Optional[datetime] = None
+    duracao: Optional[int] = None  # em minutos
+    observacao: Optional[str] = None
 
 
 class CheckInCreate(CheckInBase):
-    pass
+    data_entrada: Optional[datetime] = None
+    data_saida: Optional[datetime] = None
+    duracao: Optional[int] = None
+    observacao: Optional[str] = None
+
+
+class CheckOutUpdate(BaseModel):
+    aluno_id: int
+    data_saida: datetime
+    duracao: Optional[int] = None
+    observacao: Optional[str] = None
 
 
 class CheckInResponse(CheckInBase):
-    id: int
-    data_entrada: datetime
+    aluno_id: int
+    data_entrada: Optional[datetime] = None
     data_saida: Optional[datetime] = None
+    duracao: Optional[int] = None  # em minutos
+    observacao: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class CheckInBatchCreate(BaseModel):
+    aluno_id: int
+    timestamp: Optional[str] = None
+    entrada: bool = True
