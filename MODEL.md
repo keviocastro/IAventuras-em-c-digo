@@ -56,6 +56,11 @@ Após identificar os intervalos mais promissores, foi aplicada uma busca bayesia
 
 > Essa estratégia híbrida aproveita o melhor dos dois mundos: velocidade do Random Search e inteligência do Bayesian Optimization.
 
+> Alguns exemplos na tela do terminal:
+
+<img src="data/img/randomized_search_rfcls.png">
+<img src="data/img/xgbcls.png">
+
 ---
 
 ## Resultados
@@ -115,8 +120,7 @@ python3 -m src.steps.train
 
 > Certifique-se de que o ambiente virtual está ativado e que todas as dependências estão instaladas.
 
-
 ## Observações Finais
 
-- O modelo será integrado a APIs com FastAPI.
+- O modelo será integrado a API com FastAPI.
 - Próximos passos: deploy em ambiente de produção com monitoramento.
