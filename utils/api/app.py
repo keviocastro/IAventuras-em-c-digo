@@ -55,7 +55,11 @@ class Checkins(BaseModel):
 class Checkouts(BaseModel):
     id: int
 
-@app.post("/aluno/registro")
+class ResponseStatus(BaseModel):
+    status: str
+    mensagem: str
+
+@app.post("/aluno/registro", summary="Registrar novo aluno", description="Registra um novo aluno com seus dados, plano e matrícula.")
 def register(aluno: Aluno, plano: Planos, matricula: Matriculas):
     try:
         if not db.connect_db():
@@ -108,7 +112,7 @@ def register(aluno: Aluno, plano: Planos, matricula: Matriculas):
     except Exception as register_error:
         logging.error(f"Register Error: {register_error}")
 
-@app.post("/aluno/checkin")
+@app.post("/aluno/checkin", summary="Check-in do aluno", description="Registra um check-in do aluno na academia.")
 def checkin(payload: CheckinPayload):
     aluno_id = payload.id_aluno
     message = {
@@ -130,7 +134,7 @@ def checkin(payload: CheckinPayload):
         logging.error(f"Erro inesperado no endpoint /aluno/checkin: {api_error}")
         raise HTTPException(status_code=500, detail="Erro inesperado no servidor.")
 
-@app.post("/aluno/checkout")
+@app.post("/aluno/checkout", response_model=ResponseStatus)
 def checkout(aluno_id: Checkouts):
     try:
         if not db.connect_db():
@@ -149,7 +153,7 @@ def checkout(aluno_id: Checkouts):
     except Exception as checkout_error:
         logging.error(f"Checkout Error: {checkout_error}")
 
-@app.get("/aluno/{id}/frequencia")
+@app.get("/aluno/{id}/frequencia", summary="Relatório com Histórico de Frequência", description="Este endpoint gera um relatório com o histórico de frequência de um aluno.")
 def get_frequency(id: int = Path(..., description="ID do aluno")):
     if db.connect_db():
         try:
@@ -284,7 +288,7 @@ def get_model_features(id: int = Path(..., description="ID do aluno")):
     
     return features
 
-@app.get("/aluno/{id}/risco-churn")
+@app.get("/aluno/{id}/risco-churn", summary="Probabilidade de Churn", description="Este endpoint retorna a probabilidade de um aluno cancelar sua inscrição.")
 def risco_churn(id: int = Path(..., description="ID do aluno")):
     try:
         features = get_model_features(id)
