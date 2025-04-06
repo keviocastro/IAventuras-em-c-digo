@@ -17,15 +17,15 @@ def schedule_daily_report():
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
         channel = connection.channel()
-
         channel.queue_declare(queue=REPORT_QUEUE_NAME, durable=True)
-
+        
         yesterday = datetime.date.today() - datetime.timedelta(days=1)
         report_date_str = yesterday.isoformat()
+        
         message = {
             "report_date": report_date_str
         }
-
+        
         channel.basic_publish(
             exchange='',
             routing_key=REPORT_QUEUE_NAME,
@@ -34,9 +34,10 @@ def schedule_daily_report():
                 delivery_mode=2,
             )
         )
+        
         logging.info(f"Mensagem para gerar relatório de {report_date_str} enviada para a fila '{REPORT_QUEUE_NAME}'.")
         connection.close()
-
+        
     except pika.exceptions.AMQPConnectionError as conn_error:
         logging.error(f"Erro ao conectar/publicar no RabbitMQ para agendar relatório: {conn_error}")
     except Exception as e:
@@ -46,9 +47,3 @@ if __name__ == "__main__":
     logging.info("Executando agendador de relatório diário...")
     schedule_daily_report()
     logging.info("Agendador de relatório diário concluído.")
-
-
-
-
-
-
