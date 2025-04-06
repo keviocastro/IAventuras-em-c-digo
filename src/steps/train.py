@@ -43,7 +43,7 @@ except Exception as split_error:
     logging.error(Fore.RED + f"Error: {split_error}")
 
 print("---\n")
-logging.info(Fore.YELLOW + "Iniciando otimização de hiperparâmetros com RandomForestClassifier...")
+logging.info(Fore.YELLOW + "Iniciando treinamento do modelo com RandomForestClassifier...")
 
 try:
     model = RandomForestClassifier(
