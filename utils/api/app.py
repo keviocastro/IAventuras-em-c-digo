@@ -13,6 +13,7 @@ from utils.db.crud import PostgreSQLDatabase
 from config.project_constants import EnvVars
 from config.project_constants import DatetimeFormats as dt
 from utils.messaging.producer import send_to_checkin_queue
+from utils.model.load_model import get_current_model
 
 env = EnvVars()
 db_password = env.get_var("DB_PASSWORD")
@@ -35,7 +36,6 @@ class CheckinPayload(BaseModel):
     id_aluno: int
 
 class Aluno(BaseModel):
-    id: int
     name: str
     age: int
 
@@ -301,6 +301,10 @@ def risco_churn(id: int = Path(..., description="ID do aluno")):
         for feature in required_features:
             if feature not in features.columns:
                 return {"status": "erro", "mensagem": f"Feature {feature} não disponível para o modelo."}
+        
+        model = get_current_model() # pra carregar o modelo mais recente
+        if model is None:
+            return {"status": "erro", "mensagem": "Erro ao carregar o modelo de previsão."}
                 
         probabilidade = model.predict_proba(features)[0][1]
         
