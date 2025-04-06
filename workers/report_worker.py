@@ -13,8 +13,6 @@ env = EnvVars()
 db_password = env.get_var("DB_PASSWORD")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
@@ -38,7 +36,6 @@ def generate_frequency_report(report_date_str: str):
         logging.error(f"Formato de data inválido recebido: {report_date_str}. Esperado YYYY-MM-DD.")
         return False
 
-    checkins_data = []
     if not db.connect_db():
         logging.error("Falha ao conectar ao DB para gerar relatório.")
         return False
@@ -59,16 +56,16 @@ def generate_frequency_report(report_date_str: str):
         LEFT JOIN matriculas m ON ci.id_aluno = m.id_aluno
             AND ci.data_checkin::DATE BETWEEN m.data_inicio AND COALESCE(m.data_fim, CURRENT_DATE)
         LEFT JOIN planos p ON m.id_plano = p.id_plano
-        WHERE a.id_aluno = %s
+        WHERE ci.data_checkin::DATE = %s
         ORDER BY ci.data_checkin DESC;
         """
-        params = (report_date_str,)
-        checkins_data = db.select(query, params)
+        
+        db.cursor.execute(query, (report_date,))
+        checkins_data = db.cursor.fetchall()
 
         db.close_db()
         logging.info(f"Dados de frequência ({len(checkins_data)} registros) recuperados para {report_date_str}.")
 
-        # Exemplo 1: Imprimir um resumo no log
         logging.info(f"--- Relatório de Frequência: {report_date_str} ---")
         if checkins_data:
             alunos_presentes = set(row[0] for row in checkins_data)
