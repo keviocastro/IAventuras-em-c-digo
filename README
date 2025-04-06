@@ -1,0 +1,188 @@
+# Sistema de Gerenciamento de Academia
+
+Este projeto implementa um sistema para gerenciamento de academia, incluindo registro de alunos, controle de frequência e um modelo de machine learning para prever a probabilidade de desistência (churn) dos alunos.
+
+## Funcionalidades
+
+- API RESTful para gestão de alunos e frequência com FastAPI
+- Banco de dados PostgreSQL para persistência de dados
+- Processamento assíncrono através de sistema de filas com RabbitMQ
+- Modelo de machine learning para previsão de churn
+- Relatórios automatizados de frequência
+- Atualização programada do modelo de previsão
+
+## Estrutura do Projeto
+
+```
+├── config/               # Configurações e constantes do projeto
+├── data/                 # Arquivos de dados para treinamento do modelo
+├── examples/             # Exemplos de uso do banco de dados
+├── main.py               # Ponto de entrada principal da aplicação
+├── scripts/              # Scripts para tarefas agendadas
+├── src/                  # Código fonte principal do modelo de ML
+│   ├── experiments/      # Experimentos para otimização do modelo
+│   ├── models/           # Artefatos do modelo de machine learning
+│   └── steps/            # Etapas de processamento do modelo
+├── tests/                # Testes unitários
+├── utils/                # Diretório com rotas da API, DB e processamento
+│   ├── api/              # Implementação da API com FastAPI
+│   ├── db/               # Operações de banco de dados
+│   ├── messaging/        # Sistema de mensageria
+│   ├── model/            # Utilitários para o RabbitMQ com o modelo ML
+│   └── pynb/             # Notebooks Jupyter para manipulação de dados
+└── workers/              # Workers para processamento assíncrono
+```
+
+## Requisitos
+
+- Python 3.11+
+- PostgreSQL
+- Sistema de mensageria (RabbitMQ)
+
+## Instalação
+
+### Linux/macOS
+
+1. Clone o repositório
+   ```bash
+   git clone https://github.com/ju4nv1e1r4/IAventuras-em-c-digo/tree/juanvieira
+   cd IAventuras-em-c-digo
+   ```
+
+2. Crie e ative um ambiente virtual
+   ```bash
+   python -m venv env
+   source env/bin/activate
+   ```
+> Se preferir utilize o uv. É mais eficiente:
+
+    ```bash
+    # macOS/Linux.
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    # Windows.
+    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    
+    uv venv env
+    ```
+
+3. Instale as dependências
+   ```bash
+   pip install -r requirements.txt
+   # ou com uv
+   uv pip install -r requirements.txt
+   ```
+
+4. Script demonstrativo de inicialização do banco de dados
+   ```bash
+   python utils/db/init_db.py
+   ```
+
+### Windows
+
+1. Clone o repositório
+   ```powershell
+   git clone https://github.com/ju4nv1e1r4/IAventuras-em-c-digo/tree/juanvieira
+   cd IAventuras-em-c-digo
+   ```
+
+2. Crie e ative um ambiente virtual
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+3. Instale as dependências
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+4. Configure o banco de dados
+   ```powershell
+   python utils\db\init_db.py
+   ```
+
+## Execução
+
+### API
+
+Para iniciar a API:
+
+```bash
+# Linux/macOS
+PYTHONPATH=. python main.py
+
+# Windows (PowerShell)
+$env:PYTHONPATH="."; python main.py
+
+# Windows (CMD)
+set PYTHONPATH=. && python main.py
+```
+
+A API estará disponível em:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### Workers
+
+Para iniciar os workers de processamento assíncrono:
+
+```bash
+# Worker de checkin
+python workers/checkin_worker.py
+
+# Worker de relatórios
+python workers/report_worker.py
+
+# Worker de atualização do modelo
+python workers/model_update_worker.py
+```
+
+## Tarefas Agendadas
+
+Configure os cron jobs no Linux/macOS:
+
+```bash
+# Editar crontab
+crontab -e
+
+# Adicionar as linhas para execução diária
+0 0 * * * cd /caminho/para/projeto && PYTHONPATH=. python scripts/schedule_report.py
+0 1 * * 0 cd /caminho/para/projeto && PYTHONPATH=. python scripts/model_update_scheduler.py
+```
+
+No Windows, use o Agendador de Tarefas para configurar tarefas semelhantes.
+
+## Docker
+
+Para executar o projeto em um container Docker:
+
+```bash
+# Construir a imagem
+docker build -t sistema-academia .
+
+# Executar o container
+docker run -p 8000:8000 sistema-academia
+```
+
+## Endpoints da API
+
+- `POST /aluno/registro`: Registra um novo aluno
+- `POST /aluno/checkin`: Registra entrada do aluno na academia
+- `GET /aluno/{id}/frequencia`: Obtém histórico de frequência
+- `GET /aluno/{id}/risco-churn`: Obtém probabilidade de desistência
+
+## Modelo de Machine Learning
+
+O modelo de previsão de churn utiliza algoritmos de aprendizado de máquina para identificar padrões de comportamento dos alunos e prever a probabilidade de desistência. Para mais detalhes sobre o modelo, consulte o arquivo `MODEL.md`.
+
+## Banco de Dados
+
+A aplicação utiliza PostgreSQL como banco de dados. A classe `PostgreSQLDatabase` em `utils/db/crud.py` fornece uma abstração para operações de banco de dados. Exemplos de uso podem ser encontrados em `examples/db_ops.py`.
+
+## Autor
+
+Juan Vieira, Engenheiro de ML
+
+Você pode entrar em contato com o autor deste projeto via:
+- https://www.linkedin.com/in/juanvieira85/
+- juanvieira1@yahoo.com

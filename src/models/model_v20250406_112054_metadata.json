@@ -1,0 +1,17 @@
+{
+    "accuracy": 0.9901270315710816,
+    "precision": 0.9907581374092317,
+    "recall": 0.995802125732076,
+    "f1": 0.993273728085526,
+    "roc_auc": 0.9992430812583394,
+    "features": [
+        "frequencia_semanal",
+        "tempo_desde_ultimo_checkin",
+        "duracao_media_visitas",
+        "tipo_plano_Mensal",
+        "tipo_plano_Semestral"
+    ],
+    "training_size": 428239,
+    "test_size": 107060,
+    "timestamp": "2025-04-06T11:20:54.934971"
+}
