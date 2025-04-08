@@ -32,8 +32,6 @@ def evaluate_model(
     Returns:
         Dicionário com métricas de avaliação
     """
-    # Verificar se o modelo tem método predict_proba
-
     # Fazer predições
     y_pred = model.predict(X_test)
 

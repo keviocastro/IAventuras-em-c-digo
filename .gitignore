@@ -1,12 +1,8 @@
-# Byte-compiled / optimized / DLL files
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -23,7 +19,41 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
+
+# Virtual environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env
+.venv
+pacto_challenge/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+
+# Notebooks
+.ipynb_checkpoints
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+challenge/relatorios/
+challenge/churn_models/
+
+# System specific files
+.DS_Store
+Thumbs.db
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -36,17 +66,8 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
 nosetests.xml
-coverage.xml
-*.cover
 .hypothesis/
-.pytest_cache/
 
 # Translations
 *.mo
@@ -70,9 +91,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
 # IPython
 profile_default/
 ipython_config.py
@@ -85,16 +103,6 @@ celerybeat-schedule
 
 # SageMath parsed files
 *.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-pacto_challenge/
 
 # Spyder project settings
 .spyderproject
@@ -113,13 +121,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# VS Code
-.vscode/
-
-# PyCharm/Intellij
-.idea/
-*.iml
 
 # Ruff
 .ruff_cache/

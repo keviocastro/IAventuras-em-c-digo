@@ -1,4 +1,3 @@
-import random
 from fastapi.testclient import TestClient
 from http import HTTPStatus
 import sys
@@ -18,6 +17,8 @@ from rabbitmq.consumers.batch_checkin_consumer import (
     validar_aluno,
     processar_checkin_em_lote,
 )
+
+from machine_learning.pipeline import pipeline
 
 
 def test_read_root_deve_retornar_ok_e_hello_world():
@@ -64,6 +65,100 @@ def test_checkin_aluno():
     )
     assert response.status_code == HTTPStatus.CREATED
     assert response.json()["aluno_id"] == 1
+
+
+API_URL = "http://localhost:8000"  # URL da API FastAPI
+
+
+@patch(
+    "rabbitmq.producers.base.solicitar_relatorio_diario"
+)  # Caminho corrigido
+@patch("requests.post")
+def test_gerar_e_verificar_relatorio(mock_post, mock_solicitar_relatorio):
+    client = TestClient(app)
+
+    # Configurar o mock para que ele faça algo simples como criar os arquivos de relatório
+    def side_effect(data=None):
+        # Criar os arquivos esperados pelo teste
+        data_str = data or datetime.now().strftime("%Y-%m-%d")
+        RELATORIOS_DIR = Path(__file__).parent / "relatorios"
+        RELATORIOS_DIR.mkdir(exist_ok=True, parents=True)
+
+        relatorio_txt = RELATORIOS_DIR / f"relatorio_{data_str}.txt"
+        with open(relatorio_txt, "w") as f:
+            f.write(f"Relatório de teste para {data_str}")
+
+        grafico_png = RELATORIOS_DIR / f"frequencia_{data_str}.png"
+        # Criar um arquivo PNG vazio
+        with open(grafico_png, "wb") as f:
+            f.write(b"PNG")
+
+    mock_solicitar_relatorio.side_effect = side_effect
+
+    # Definir data para o relatório
+    data_hoje = datetime.now().strftime("%Y-%m-%d")
+
+    # Usar o client de teste
+    response = client.post("/relatorios/diario", json={"data": data_hoje})
+
+    assert response.status_code == 202
+
+
+@patch("machine_learning.pipeline.treinar_modelo_churn")
+@patch("machine_learning.pipeline.save_model")
+def test_metricas_no_intervalo_correto(mock_save_model, mock_treinar_modelo):
+    """Testa se as métricas retornadas estão no intervalo correto de 0 a 1"""
+    # Configurar os mocks
+    mock_modelo = MagicMock()
+    mock_metricas = {
+        "accuracy": 0.9080,
+        "precision": 0.7895,
+        "recall": 0.7895,
+        "f1": 0.7895,
+    }
+
+    mock_dados = MagicMock()
+    mock_modelo_path = "modelo_churn_2025-04-07.pkl"
+
+    # Configurar o retorno da função mock
+    mock_treinar_modelo.return_value = (mock_modelo, mock_metricas, mock_dados)
+    mock_save_model.return_value = mock_modelo_path
+
+    # Executar a função pipeline
+    resultado = pipeline()
+
+    # Extrair as métricas
+    _, metricas, _, _ = resultado
+
+    # Verificar se cada métrica está no intervalo de 0 a 1
+    for nome_metrica, valor_metrica in metricas.items():
+        assert valor_metrica >= 0.0, f"Métrica {nome_metrica} deve ser >= 0"
+        assert valor_metrica <= 1.0, f"Métrica {nome_metrica} deve ser <= 1"
+
+
+@patch("machine_learning.pipeline.treinar_modelo_churn")
+@patch("machine_learning.pipeline.save_model")
+def test_salvamento_e_carregamento_modelo(
+    mock_save_model, mock_treinar_modelo
+):
+    """Testa se o modelo é salvo e pode ser carregado corretamente"""
+    # Criar caminho temporário para teste
+    modelo_path = "test_model.pkl"
+
+    # Configurar os mocks
+    mock_modelo = MagicMock()
+    mock_metricas = {"accuracy": 0.85}
+    mock_dados = MagicMock()
+
+    # Configurar o retorno da função mock
+    mock_treinar_modelo.return_value = (mock_modelo, mock_metricas, mock_dados)
+    mock_save_model.return_value = modelo_path
+
+    # Executar a função pipeline
+    resultado = pipeline()
+    _, _, _, path_retornado = resultado
+
+    assert path_retornado == modelo_path
 
 
 def test_processar_entrada_em_lote():

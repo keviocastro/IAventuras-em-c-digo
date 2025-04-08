@@ -21,6 +21,10 @@ CREATE INDEX idx_alunos_plano ON alunos(plano_id);
 CREATE INDEX idx_checkins_aluno ON checkins(aluno_id);
 CREATE INDEX idx_checkins_data ON checkins(data_entrada);
 
+
+-- Rodar update_db.py para popular o banco de dados com dados de exemplo substanciais
+
+
 -- -- Inserindo dados na tabela 'planos'
 -- INSERT INTO planos (plano_nome) VALUES
 --     ('Bronze'),

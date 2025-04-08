@@ -42,9 +42,6 @@ def read_root():
     return {"message": "Hello World!"}
 
 
-# COMPLETAR AS ROTAS PARA O CRUD
-
-
 # Registrar um novo aluno
 @router.post(
     "/aluno/registro",

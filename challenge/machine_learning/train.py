@@ -1,17 +1,16 @@
-import pickle
-from datetime import datetime
 from pathlib import Path
 import sys
 
 # Adicionar diretório raiz ao path
 sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent))
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
 
-from data.utils import save_model
 from data.preprocess import preprocess_data
+
+from data.utils import split_train_val_test, get_X_y
+from machine_learning.utils import set_seed, evaluate_model
 
 
 def treinar_modelo_churn():
@@ -23,50 +22,41 @@ def treinar_modelo_churn():
     """
     # Obter e preparar os dados
     try:
+        set_seed(42)
+
         df = preprocess_data()
 
-        # Preparar features e target
-        X = df[
-            [
-                "dias_desde_cadastro",
-                "dias_desde_ultimo_checkin",
-                "total_checkins",
-                "media_intervalo_checkins",
-            ]
-        ]
-        y = df["status_aluno"]
-
-        # Estatísticas para log
-        stats = {
-            "total_alunos": len(df["aluno_id"].unique()),
-            "total_registros": len(df),
-            "X": X,  # Para feature importance
-        }
-
-        # Dividir dados em treino e teste
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+        train_data, val_data, test_data = split_train_val_test(
+            df, test_size=0.2, val_size=0.2
         )
+
+        X_train, y_train = get_X_y(train_data)
+        X_val, y_val = get_X_y(val_data)
+        X_test, y_test = get_X_y(test_data)
 
         # Treinar o modelo
         modelo = RandomForestClassifier(n_estimators=100, random_state=42)
         modelo.fit(X_train, y_train)
 
         # Avaliar o modelo
-        y_pred = modelo.predict(X_test)
-        stats["acuracia"] = accuracy_score(y_test, y_pred)
-        report = classification_report(y_test, y_pred, output_dict=True)
+        metrics = evaluate_model(model=modelo, X_test=X_test, y_test=y_test)
 
-        # Salvar modelo e métricas
-        modelo_path = save_model(modelo, report, stats)
+        print("Relatório de Classificação:")
+        # Display metrics in a readable format
+        for key, value in metrics.items():
+            if (
+                key != "feature_importances"
+            ):  # Handle feature importances separately
+                print(f"{key.capitalize()}: {value:.4f}")
 
-        # Adicionar feature importance ao resultado
-        stats["feature_importance"] = dict(
-            zip(X.columns, modelo.feature_importances_)
-        )
-        stats["modelo_path"] = modelo_path
+        # Display feature importances
+        print("\nFeature Importances:")
+        feature_names = X_train.columns
+        importances = metrics["feature_importances"]
+        for feature, importance in zip(feature_names, importances):
+            print(f"{feature}: {importance:.4f}")
 
-        return stats
+        return modelo, metrics, df
 
     except Exception as e:
         print(f"Erro no treinamento: {e}")
@@ -75,19 +65,8 @@ def treinar_modelo_churn():
 
 if __name__ == "__main__":
     resultado = treinar_modelo_churn()
-
     if resultado:
-        print("\n=== Resultados do Treinamento ===")
-        print(f"Acurácia: {resultado['acuracia']:.4f}")
-        print(f"Total de alunos: {resultado['total_alunos']}")
-        print(f"Total de registros: {resultado['total_registros']}")
-
-        print("\nImportância das features:")
-        for feature, importance in sorted(
-            resultado["feature_importance"].items(),
-            key=lambda x: x[1],
-            reverse=True,
-        ):
-            print(f"  {feature}: {importance:.4f}")
+        modelo, metrics, df = resultado
+        print("Modelo treinado com sucesso.")
     else:
         print("Falha ao treinar o modelo")

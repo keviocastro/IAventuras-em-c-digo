@@ -3,7 +3,6 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from infraestructure.connection import ConnectionRabbitMQ
 from infraestructure.channel import ChannelRabbitMQ
 
 

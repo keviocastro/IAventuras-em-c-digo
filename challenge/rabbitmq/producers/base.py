@@ -56,7 +56,7 @@ def publicar_checkins_em_massa(checkins, connection=None, fechar_conexao=True):
     Returns:
         None
     """
-    exchange = ExchangeRabbitMQ.ExchangeRabbitMQ(connection)
+    exchange = ExchangeRabbitMQ(connection)
     exchange.declare_exchange("academia.eventos", "direct")
 
     for checkin in checkins:
@@ -80,7 +80,7 @@ def solicitar_relatorio_diario(
     Returns:
         None
     """
-    exchange = ExchangeRabbitMQ.ExchangeRabbitMQ(connection)
+    exchange = ExchangeRabbitMQ(connection)
     exchange.declare_exchange("academia.eventos", "direct")
 
     mensagem = {
@@ -105,7 +105,7 @@ def solicitar_atualizacao_modelo_churn(connection=None, fechar_conexao=True):
     Returns:
         None
     """
-    exchange = ExchangeRabbitMQ.ExchangeRabbitMQ(connection)
+    exchange = ExchangeRabbitMQ(connection)
     exchange.declare_exchange("academia.eventos", "direct")
 
     mensagem = {
