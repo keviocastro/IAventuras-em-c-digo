@@ -50,15 +50,15 @@ def processar_checkin(ch, method, properties, body):
             ultimo_checkin = (
                 db.query(CheckIn)
                 .filter(
-                    CheckIn.aluno_id == aluno_id, CheckIn.data_saida.is_(None)
+                    CheckIn.aluno_id == aluno_id,
+                    CheckIn.duracao_treino.is_(None),
                 )
                 .order_by(CheckIn.data_entrada.desc())
                 .first()
             )
 
             if ultimo_checkin:
-                ultimo_checkin.data_saida = data
-                ultimo_checkin.duracao = (
+                ultimo_checkin.duracao_treino = (
                     data - ultimo_checkin.data_entrada
                 ).total_seconds() / 60
                 db.commit()

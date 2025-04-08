@@ -19,8 +19,8 @@ from models.schemas import (
     AlunoResponse,
     CheckInCreate,
     CheckInResponse,
-    CheckOutUpdate,
     CheckInBatchCreate,
+    CheckInUpdate,
 )
 
 from rabbitmq.producers.base import (
@@ -123,7 +123,7 @@ def criar_checkin(
     status_code=HTTPStatus.OK,
 )
 def atualizar_checkout(
-    checkout_data: CheckOutUpdate,
+    checkout_data: CheckInUpdate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
@@ -143,26 +143,15 @@ def atualizar_checkout(
         .first()
     )
 
-    if not ultimo_checkin or ultimo_checkin.data_saida:
+    if not ultimo_checkin or ultimo_checkin.duracao_treino:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail="Nenhum check-in em aberto encontrado para o aluno",
         )
 
-    if bool(checkout_data.data_saida) != bool(checkout_data.duracao):
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail="Ambos os campos data_saida e duracao devem ser informados ou nenhum deles",
-        )
-
-    ultimo_checkin.data_saida = checkout_data.data_saida or datetime.now()
-
-    ultimo_checkin.duracao = (
-        checkout_data.duracao
-        or (
-            ultimo_checkin.data_saida - ultimo_checkin.data_entrada
-        ).total_seconds()
-        / 60
+    ultimo_checkin.duracao_treino = (
+        checkout_data.duracao_treino
+        or (datetime.now() - ultimo_checkin.data_entrada).total_seconds() / 60
     )
 
     db.commit()
@@ -171,8 +160,8 @@ def atualizar_checkout(
     # Publicar evento no RabbitMQ em segundo plano
     background_tasks.add_task(
         publicar_checkin_ou_checkout,
-        aluno_id=ultimo_checkin.aluno_id,
-        timestamp=ultimo_checkin.data_saida.isoformat(),
+        aluno_id=checkout_data.aluno_id,
+        timestamp=datetime.now().isoformat(),
         entrada=False,
     )
 

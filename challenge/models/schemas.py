@@ -5,14 +5,8 @@ from datetime import datetime
 
 # === Schemas de Alunos ===
 class AlunoBase(BaseModel):
-    nome: str
-    email: EmailStr
-    telefone: Optional[str] = None
-    data_nascimento: Optional[datetime] = None
-    sexo: Optional[str] = None
-    endereco: Optional[str] = None
+    aluno_status: Optional[str] = "ativo"
     plano_id: Optional[int] = None
-    status: Optional[str] = None
 
 
 class AlunoCreate(AlunoBase):
@@ -21,7 +15,6 @@ class AlunoCreate(AlunoBase):
 
 class AlunoResponse(AlunoBase):
     id: int
-    data_cadastro: datetime
 
     class Config:
         from_attributes = True
@@ -29,12 +22,7 @@ class AlunoResponse(AlunoBase):
 
 # === Schemas de Planos ===
 class PlanoBase(BaseModel):
-    nome: str
-    descricao: Optional[str] = None
-    valor_mensal: float
-    periodo_contrato: Optional[int] = 1
-    ativo: Optional[bool] = True
-    data_criacao: Optional[datetime] = datetime.now().isoformat()
+    plano_nome: str
 
 
 class PlanoCreate(PlanoBase):
@@ -52,34 +40,22 @@ class PlanoResponse(PlanoBase):
 class CheckInBase(BaseModel):
     aluno_id: int
     data_entrada: Optional[datetime] = None
-    data_saida: Optional[datetime] = None
-    duracao: Optional[int] = None  # em minutos
-    observacao: Optional[str] = None
+    duracao_treino: Optional[int] = None  # em minutos
 
 
 class CheckInCreate(CheckInBase):
-    data_entrada: Optional[datetime] = None
-    data_saida: Optional[datetime] = None
-    duracao: Optional[int] = None
-    observacao: Optional[str] = None
-
-
-class CheckOutUpdate(BaseModel):
-    aluno_id: int
-    data_saida: datetime
-    duracao: Optional[int] = None
-    observacao: Optional[str] = None
+    pass
 
 
 class CheckInResponse(CheckInBase):
-    aluno_id: int
-    data_entrada: Optional[datetime] = None
-    data_saida: Optional[datetime] = None
-    duracao: Optional[int] = None  # em minutos
-    observacao: Optional[str] = None
+    id: int
 
     class Config:
         from_attributes = True
+
+
+class CheckInUpdate(CheckInBase):
+    pass
 
 
 class CheckInBatchCreate(BaseModel):

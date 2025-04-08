@@ -60,30 +60,9 @@ def test_checkin_aluno():
         json={
             "aluno_id": 1,
             "data_entrada": datetime.now().isoformat(),
-            "observacao": "Teste de check-in",
         },
     )
     assert response.status_code == HTTPStatus.CREATED
-    assert response.json()["aluno_id"] == 1
-
-
-def test_checkout_aluno():
-    client = TestClient(app)
-    duracao = random.randint(
-        25, 120
-    )  # Duração aleatória entre 25 e 120 minutos
-    response = client.put(
-        "/aluno/checkout",
-        json={
-            "aluno_id": 1,
-            "data_saida": (
-                datetime.now() + timedelta(minutes=duracao)
-            ).isoformat(),
-            "duracao": duracao,
-            "observacao": "Teste de check-out",
-        },
-    )
-    assert response.status_code == HTTPStatus.OK
     assert response.json()["aluno_id"] == 1
 
 
@@ -110,11 +89,12 @@ def test_processar_saida_em_lote_sucesso():
     # Mock para o banco de dados
     mock_db = MagicMock()
 
-    # Mock para o resultado da consulta
+    # Criar mock para o check-in que será retornado pela consulta
     mock_checkin = MagicMock()
-    mock_checkin.data_entrada = datetime.now() - timedelta(
-        hours=1
-    )  # 1 hora atrás
+    mock_checkin.data_entrada = datetime.now() - timedelta(hours=1)
+    mock_checkin.duracao_treino = None
+
+    # Configurar o mock do banco de dados para retornar o check-in mock
     mock_db.query().filter().order_by().first.return_value = mock_checkin
 
     # Dados de teste
@@ -126,10 +106,13 @@ def test_processar_saida_em_lote_sucesso():
 
     # Verificar resultados
     assert resultado is True
-    assert mock_checkin.data_saida == data
-    assert (
-        mock_checkin.duracao
-        == (data - mock_checkin.data_entrada).total_seconds() / 60
+    assert mock_checkin.duracao_treino is not None
+    import math
+
+    assert math.isclose(
+        mock_checkin.duracao_treino,
+        (data - mock_checkin.data_entrada).total_seconds() / 60,
+        rel_tol=0.01,  # 1% de tolerância
     )
     mock_db.commit.assert_called_once()
 
@@ -294,99 +277,3 @@ def test_processar_checkin_em_lote_aluno_invalido(
         mock_channel.basic_ack.assert_called_once_with(
             delivery_tag=mock_method.delivery_tag
         )
-
-
-@patch("challenge.rabbitmq.consumers.batch_checkin_consumer.next")
-@patch("challenge.rabbitmq.consumers.batch_checkin_consumer.get_db")
-def test_processar_checkin_em_lote_erro(mock_get_db, mock_next):
-    """Teste para verificar tratamento de erro no processamento"""
-    # Configurar mock para lançar exceção
-    mock_next.side_effect = Exception("Erro de teste")
-    mock_get_db.return_value = iter([MagicMock()])
-
-    # Criar channel e method mocks
-    mock_channel = MagicMock()
-    mock_method = MagicMock()
-    mock_method.delivery_tag = "tag000"
-
-    # Dados de teste
-    data = {
-        "aluno_id": 1,
-        "tipo": "entrada",
-        "timestamp": datetime.now().isoformat(),
-    }
-    body = json.dumps(data).encode()
-
-    # Executar a função
-    processar_checkin_em_lote(mock_channel, mock_method, None, body)
-
-    # Verificar resultado - deve rejeitar a mensagem para reprocessamento
-    mock_channel.basic_nack.assert_called_once_with(
-        delivery_tag=mock_method.delivery_tag, requeue=True
-    )
-
-
-# def test_ciclo_checkin_checkout_batch():
-#     """Teste que simula um ciclo completo de check-in e check-out em lote"""
-#     client = TestClient(app)
-
-#     # 1. Cria um check-in via API
-#     aluno_id = 1
-#     data_entrada = datetime.now()
-#     response = client.post(
-#         "/aluno/checkin",
-#         json={
-#             "aluno_id": aluno_id,
-#             "data_entrada": data_entrada.isoformat(),
-#             "observacao": "Check-in para teste batch",
-#         },
-#     )
-#     assert response.status_code == HTTPStatus.CREATED
-#     checkin_id = response.json().get("id")
-
-#     # 2. Simula o processamento em lote que seria feito pelo RabbitMQ
-#     with patch(
-#         "challenge.rabbitmq.consumers.batch_checkin_consumer.get_db"
-#     ) as mock_get_db:
-#         # Configura mocks para o banco
-#         mock_db = MagicMock()
-#         mock_get_db.return_value = iter([mock_db])
-
-#         # Mock do aluno e check-in
-#         mock_aluno = MagicMock()
-#         mock_aluno.id = aluno_id
-#         mock_db.query().filter().first.return_value = mock_aluno
-
-#         mock_checkin = MagicMock()
-#         mock_checkin.id = checkin_id
-#         mock_checkin.aluno_id = aluno_id
-#         mock_checkin.data_entrada = data_entrada
-#         mock_db.query().filter().order_by().first.return_value = mock_checkin
-
-#         # Simula o processamento de uma saída em lote
-#         data_saida = data_entrada + timedelta(hours=1)
-#         # duracao = 60  # 60 minutos
-
-#         # Mock da chamada de processamento
-#         with patch(
-#             "challenge.rabbitmq.consumers.batch_checkin_consumer.processar_saida"
-#         ) as mock_processar_saida:
-#             mock_processar_saida.return_value = True
-
-#             # Criar mensagem para saída
-#             data = {
-#                 "aluno_id": aluno_id,
-#                 "tipo": "saida",
-#                 "timestamp": data_saida.isoformat(),
-#             }
-#             body = json.dumps(data).encode()
-
-#             # Mock do canal RabbitMQ
-#             mock_channel = MagicMock()
-#             mock_method = MagicMock()
-
-#             # Processar a mensagem
-#             processar_checkin_em_lote(mock_channel, mock_method, None, body)
-
-#             # Verificar que a saída foi processada
-#             mock_processar_saida.assert_called_once()

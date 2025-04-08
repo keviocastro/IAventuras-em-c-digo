@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from data.vars import DATE_COLS, ML_COLS
+from data.vars import DATE_COLS, ML_COLS, TARGET_COLS
 
 
 # Funções auxiliares para agregação
@@ -19,13 +19,26 @@ def mean_interval(dates):
     return sum(intervals) / len(intervals)
 
 
+def calculate_weekly_frequency(df, aluno_id):
+    """Calcula frequência semanal média baseada nos check-ins"""
+    student_data = df[df["aluno_id"] == aluno_id]
+    if len(student_data) <= 1:
+        return 0
+
+    # Calcula o período total em semanas
+    first_checkin = student_data["checkin_data_entrada"].min()
+    last_checkin = student_data["checkin_data_entrada"].max()
+    total_weeks = max(1, (last_checkin - first_checkin).days / 7)
+
+    return len(student_data) / total_weeks
+
+
 def mean_duration_minutes(durations):
     valid = durations.dropna()
-    return valid.mean().total_seconds() / 60 if not valid.empty else 0
+    return valid.mean() if not valid.empty else 0
 
 
 def preprocess_data(
-    # raw_file_path: str = "raw_file_v_1.csv"
     raw_file_path: Path = Path(__file__).parent.parent
     / "data"
     / "raw_data"
@@ -35,110 +48,110 @@ def preprocess_data(
     Processa dados de alunos e retorna um DataFrame com features para análise.
 
     Args:
-        raw_data_dir: Diretório contendo os arquivos de dados
-        raw_file: Nome do arquivo CSV com dados dos alunos
+        raw_file_path: Caminho para o arquivo CSV com dados brutos
 
     Returns:
         DataFrame com features processadas para análise
     """
 
-    # Carrega os dados usando Path
+    # Carrega os dados
     df = pd.read_csv(raw_file_path)
     df = df.drop(columns=["Unnamed: 0"], errors="ignore")
 
-    # Define data de referência para cálculos temporais
-    now_date = pd.Timestamp.now().normalize()
+    print(df.columns)
+
+    # Verifica se todas as colunas necessárias existem
+    missing_cols = [
+        col
+        for col in [
+            "aluno_id",
+            "aluno_status",
+            "checkin_data_entrada",
+            "checkin_duracao_treino",
+        ]
+        if col not in df.columns
+    ]
+    if missing_cols:
+        raise ValueError(
+            f"Colunas necessárias não encontradas: {missing_cols}"
+        )
 
     # Converte colunas de data para datetime
-    date_cols = [col for col in DATE_COLS if col in df.columns]
-
-    for col in date_cols:
+    for col in DATE_COLS:
         df[col] = pd.to_datetime(df[col], errors="coerce").dt.normalize()
 
-    # Converte colunas numéricas
-    df["plano_periodo_contrato"] = pd.to_numeric(
-        df["plano_periodo_contrato"], errors="coerce"
-    )
-    df["plano_valor_mensal"] = pd.to_numeric(
-        df["plano_valor_mensal"], errors="coerce"
-    )
+    # Converte duracao_treino para minutos se necessário
+    if "checkin_duracao_treino" in df.columns:
+        # Verifica se já está em minutos ou precisa converter
+        if df["checkin_duracao_treino"].dtype == "object":
+            df["checkin_duracao_treino"] = (
+                pd.to_timedelta(df["checkin_duracao_treino"], errors="coerce")
+                .dt.total_seconds()
+                .astype(int)
+                / 60
+            )
 
     # Remove registros incompletos
-    df.dropna(
-        subset=["aluno_id", "data_cadastro", "checkin_data_entrada"],
-        inplace=True,
-    )
+    df.dropna(subset=["aluno_id", "checkin_data_entrada"], inplace=True)
 
-    # Calcula duração válida de check-in
-    if "checkin_duracao" not in df.columns:
-        df["duracao_td"] = (
-            df["checkin_data_saida"] - df["checkin_data_entrada"]
-        )
-        df.loc[
-            df["duracao_td"].isna() | (df["duracao_td"] < pd.Timedelta(0)),
-            "duracao_td",
-        ] = pd.NaT
-    else:
-        # Se já existir duração, converte para timedelta
-        df["duracao_td"] = pd.to_timedelta(
-            df["checkin_duracao"], errors="coerce"
-        )
+    # Calcula frequência semanal para cada aluno
+    freq_semanal = {}
+    for aluno in df["aluno_id"].unique():
+        freq_semanal[aluno] = calculate_weekly_frequency(df, aluno)
 
     # Agrupa por aluno e calcula features
-    students = (
+    alunos = (
         df.groupby("aluno_id")
         .agg(
-            data_cadastro=("data_cadastro", "first"),
-            status=("status", "first"),
-            plano_data_criacao=("plano_data_criacao", "first"),
-            plano_periodo_contrato=("plano_periodo_contrato", "first"),
-            plano_valor_mensal=("plano_valor_mensal", "first"),
+            aluno_status=("aluno_status", "first"),
+            plano_id=("plano_id", "first"),
             ultimo_checkin=("checkin_data_entrada", "max"),
-            total_checkins=("checkin_data_entrada", "count"),
-            media_intervalo_checkins=("checkin_data_entrada", mean_interval),
-            tempo_medio_na_academia=("duracao_td", mean_duration_minutes),
+            tempo_medio_na_academia=(
+                "checkin_duracao_treino",
+                mean_duration_minutes,
+            ),
         )
         .reset_index()
     )
 
-    # Calcula métricas adicionais
-    students["dias_desde_cadastro"] = (
-        now_date - students["data_cadastro"]
-    ).dt.days
-    students["status_aluno"] = (
-        students["status"].str.lower().eq("ativo").astype(int)
-    )
+    # Adiciona frequência semanal
+    alunos["frequencia_semanal"] = (
+        alunos["aluno_id"].map(freq_semanal) * 10
+    ).astype(int)
 
-    # Calcula data de fim do plano - usando plano_data_criacao como data de início
-    mask = (
-        students["plano_data_criacao"].notna()
-        & students["plano_periodo_contrato"].notna()
-    )
-    students["data_fim_plano"] = pd.NaT
-    students.loc[mask, "data_fim_plano"] = students.loc[mask].apply(
-        lambda row: row["plano_data_criacao"]
-        + pd.DateOffset(months=int(row["plano_periodo_contrato"])),
-        axis=1,
-    )
+    alunos["tempo_medio_na_academia"] = alunos[
+        "tempo_medio_na_academia"
+    ].astype(int)
 
-    # Calcula dias restantes no plano e dias desde último check-in
-    students["vigencia_plano_restante_dias"] = (
-        (students["data_fim_plano"] - now_date)
-        .dt.days.fillna(0)
-        .clip(lower=0)
+    # Encontra a data do checkin mais recente no conjunto de dados
+    max_checkin_date = alunos["ultimo_checkin"].max()
+
+    # Calcula dias desde último check-in usando a data máxima como referência
+    alunos["dias_desde_ultimo_checkin"] = (
+        (max_checkin_date - alunos["ultimo_checkin"])
+        .dt.days.fillna(-1)
         .astype(int)
     )
 
-    students["dias_desde_ultimo_checkin"] = (
-        (now_date - students["ultimo_checkin"]).dt.days.fillna(-1).astype(int)
+    # Todos os alunos que possuem check-in maior que 50 dias são considerados inativos
+    alunos.loc[alunos["dias_desde_ultimo_checkin"] > 50, "aluno_status"] = (
+        "inativo"
     )
 
-    # Usando os nomes corretos para as métricas
-    students["valor_plano"] = students["plano_valor_mensal"]
-    students["duracao_plano_meses"] = students["plano_periodo_contrato"]
+    # Seleciona 25% dos alunos inativos com check-in recente e muda para ativo
+    mask = (alunos["dias_desde_ultimo_checkin"] <= 50) & (
+        alunos["aluno_status"] == "inativo"
+    )
+    sample_indices = alunos[mask].sample(frac=0.25, random_state=42).index
+    alunos.loc[sample_indices, "aluno_status"] = "ativo"
+
+    # trocar aluno_status para 1 e 0
+    alunos["aluno_status"] = alunos["aluno_status"].map(
+        {"ativo": 1, "inativo": 0}
+    )
 
     # Retorna apenas as colunas necessárias
-    return students[ML_COLS]
+    return alunos[ML_COLS + TARGET_COLS]
 
 
 if __name__ == "__main__":

@@ -38,26 +38,12 @@ def extract_data_to_csv():
             dados.append(
                 {
                     "aluno_id": aluno.id,
-                    "nome": aluno.nome,
-                    "email": aluno.email,
-                    "telefone": aluno.telefone,
-                    "data_nascimento": aluno.data_nascimento,
-                    "sexo": aluno.sexo,
-                    "endereco": aluno.endereco,
-                    "data_cadastro": aluno.data_cadastro,
+                    "aluno_status": aluno.aluno_status,
                     "plano_id": plano.id,
-                    "plano_nome": plano.nome,
-                    "plano_descricao": plano.descricao,
-                    "plano_valor_mensal": plano.valor_mensal,
-                    "plano_periodo_contrato": plano.periodo_contrato,
-                    "plano_ativo": plano.ativo,
-                    "plano_data_criacao": plano.data_criacao,
-                    "status": aluno.status,
+                    "plano_nome": plano.plano_nome,
                     "checkin_id": checkin.id,
                     "checkin_data_entrada": checkin.data_entrada,
-                    "checkin_data_saida": checkin.data_saida,
-                    "checkin_duracao": checkin.duracao,
-                    "checkin_observacao": checkin.observacao,
+                    "checkin_duracao_treino": checkin.duracao_treino,
                 }
             )
 
