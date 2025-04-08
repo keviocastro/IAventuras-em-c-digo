@@ -1,0 +1,10 @@
+metric,value
+modelo,RandomForestClassifier
+accuracy,0.9080459770114943
+precision,0.7894736842105263
+recall,0.7894736842105263
+f1,0.7894736842105263
+importance_feature_0,0.20881188031274778
+importance_feature_1,0.6603116598904544
+importance_feature_2,0.08815868000938525
+importance_feature_3,0.04271777978741275
