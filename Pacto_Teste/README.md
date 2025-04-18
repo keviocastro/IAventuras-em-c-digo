@@ -21,8 +21,7 @@ Implementação de sistema de gestão para academias com funcionalidades de IA p
 ### Clone o repositório:
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
-cd <NOME_DO_REPOSITORIO>
+git clone https://github.com/Pedro-Reis2/IAventuras-em-c-digo.git
 
 # Instalar dependências
 pip install -r requirements.txt
