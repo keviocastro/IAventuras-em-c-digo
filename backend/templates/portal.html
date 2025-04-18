@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Menu</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body, html {
+      height: 100%;
+    }
+    .center-container {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .form-card {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    .card-header {
+      background-color: #007bff;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+    .btn-custom {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <div class="center-container">
+    <div class="card shadow-sm form-card">
+      <div class="card-header">
+        <h2 class="mb-0">Menu Principal</h2>
+      </div>
+      <div class="card-body">
+        <div class="mt-3">
+          <button class="btn btn-primary btn-custom" data-bs-toggle="modal" data-bs-target="#modalRegistro">Registrar Novo Aluno</button>
+          <button class="btn btn-primary btn-custom" data-bs-toggle="modal" data-bs-target="#modalCheckin">Registrar Check-in/Check-out</button>
+          <button class="btn btn-primary btn-custom" data-bs-toggle="modal" data-bs-target="#modalAlunos">Verificar alunos e seus dados</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content rounded-4">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Registro de Aluno</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="formRegistro">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="nome" class="form-label">Nome</label>
+              <input type="text" name="nome" id="nome" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="cpf" class="form-label">CPF</label>
+              <input type="text" name="cpf" id="cpf" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="plano" class="form-label">Plano</label>
+              <select name="plano" id="plano" class="form-select" required>
+                <option value="" disabled selected>Selecione um plano</option>
+                <option value="1">6 meses</option>
+                <option value="2">12 meses</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Registrar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalCheckin" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content rounded-4">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Check-in de Aluno</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="formCheckin">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="cpfCheckin" class="form-label">CPF do Aluno</label>
+              <input type="text" class="form-control" id="cpfCheckin" name="cpf" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Fazer Check-in</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<div class="modal fade" id="modalAlunos" tabindex="-1" aria-labelledby="modalAlunosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Alunos Cadastrados - Aperte duas vezes em qualquer aluno para ver suas métricas</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-hover" id="tabelaAlunos">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Plano</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<div class="modal fade" id="modalDetalhesAluno" tabindex="-1" aria-labelledby="modalDetalhesAlunoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalhes do Aluno</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <h6><strong>Métricas:</strong></h6>
+          <pre id="dadosRisco" class="bg-light p-3 rounded"></pre>
+  
+          <hr>
+  
+          <h6><strong>Histórico de Frequência:</strong></h6>
+          <table class="table table-bordered table-striped" id="tabelaFrequencia">
+            <thead>
+              <tr>
+                <th>Check-in</th>
+                <th>Check-out</th>
+              </tr>
+            </thead>
+            <tbody>
+            
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById("probForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const cpf = document.getElementById("cpfConsulta").value;
+      const resultadoBox = document.getElementById("resultado");
+      resultadoBox.value = "Consultando probabilidade de cancelamento, aguarde...";
+
+      try {
+        const postResponse = await fetch("/probabilidade", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({ cpf })
+        });
+
+        const postData = await postResponse.json();
+
+        if (postData.message && !isNaN(postData.message)) {
+          const alunoId = postData.message;
+          const getResponse = await fetch(`/aluno/${alunoId}/risco-churn`);
+          const getData = await getResponse.json();
+          resultadoBox.value = JSON.stringify(getData, null, 2);
+        } else {
+          resultadoBox.value = postData.message || "Erro desconhecido";
+        }
+
+      } catch (err) {
+        resultadoBox.value = "Erro ao processar: " + err.message;
+      }
+    });
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const tabelaAlunos = document.querySelector("#tabelaAlunos tbody");
+    
+      const modalAlunos = document.getElementById("modalAlunos");
+      modalAlunos.addEventListener("show.bs.modal", async () => {
+        const res = await fetch("/api/alunos"); 
+        const alunos = await res.json();
+        tabelaAlunos.innerHTML = "";
+    
+        alunos.forEach(aluno => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${aluno.nome}</td><td>${aluno.cpf}</td><td>${aluno.plano}</td>`;
+          row.dataset.id = aluno.id;
+    
+          row.ondblclick = () => {
+            carregarDetalhes(aluno.id);
+            const modalDetalhes = new bootstrap.Modal(document.getElementById("modalDetalhesAluno"));
+            modalDetalhes.show();
+          };
+    
+          tabelaAlunos.appendChild(row);
+        });
+      });
+    
+      async function carregarDetalhes(id) {
+        const riscoRes = await fetch(`/aluno/${id}/risco-churn`);
+        const riscoData = await riscoRes.json();
+        const textoHtml = `
+          <p><strong>Tempo médio de visita (minutos):</strong> ${riscoData.tempo_medio_visita_minutos}</p>
+          <p><strong>Média de check-ins semanais:</strong> ${riscoData.media_checkins_semanal}</p>
+          <p><strong>Último check-out:</strong> ${riscoData.ultimo_checkout || "Nenhum"}</p>
+          <p><strong>Plano:</strong> ${riscoData.plano}</p>
+          <p><strong>Probabilidade de solicitação de cancelamento:</strong> ${riscoData["Probabilidade de solicitação de cancelamento:"]}</p>
+        `;
+        document.getElementById("dadosRisco").innerHTML = textoHtml;  
+        const freqRes = await fetch(`/aluno/${id}/frequencia`);
+        const freqData = await freqRes.json();
+    
+        const tabelaFreq = document.querySelector("#tabelaFrequencia tbody");
+        tabelaFreq.innerHTML = "";
+        freqData.forEach(reg => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${reg.checkin}</td><td>${reg.checkout || "—"}</td>`;
+          tabelaFreq.appendChild(tr);
+        });
+      }
+    });
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const formCheckin = document.getElementById("formCheckin");
+    
+        formCheckin.addEventListener("submit", async function (e) {
+          e.preventDefault(); 
+    
+          const cpf = document.getElementById("cpfCheckin").value;
+    
+          try {
+            const res = await fetch("/aluno/checkin", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: new URLSearchParams({ cpf })
+            });
+    
+            const data = await res.json();
+    
+            alert((data.message));
+
+          } catch (err) {
+            alert("Erro de conexão: " + err.message);
+          }
+    
+          const modalEl = document.getElementById("modalCheckin");
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal.hide();
+          formCheckin.reset();
+        });
+      });
+    </script>
+    <script>
+      document.getElementById("formRegistro").addEventListener("submit", async function (e) {
+        e.preventDefault(); 
+    
+        const nome = document.getElementById("nome").value;
+        const cpf = document.getElementById("cpf").value;
+        const plano = document.getElementById("plano").value;
+    
+        try {
+          const response = await fetch("/aluno/registro", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ nome, cpf, plano })
+          });
+    
+          const data = await response.json();
+    
+          if (response.ok) {
+            alert("Aluno registrado com sucesso!");
+            document.getElementById("formRegistro").reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById("modalRegistro"));
+            modal.hide();
+          } else {
+            alert("Erro: " + data.error);
+          }
+        } catch (err) {
+          alert("Erro na requisição: " + err.message);
+        }
+      });
+    </script>
+    
+</body>
+</html>

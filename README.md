@@ -1,60 +1,61 @@
-# Teste Prático para Engenheiro de IA - Nível Júnior
+<h1>Sistema de Gerenciamento de academia</h1>
 
-## Contexto
-Uma academia de ginástica precisa de um sistema para monitorar a frequência dos alunos e prever possíveis desistências (churn). O sistema deve processar dados de entrada dos alunos na academia e gerar insights para a equipe de retenção.
+<p>Este projeto consiste em uma aplicação web desenvolvida em Flask, utilizando RabbitMQ para gerenciar filas de check-ins em massa e PostgreSQL para armazenar os dados</p>
 
-## Requisitos Técnicos
+<h2>Tecnologias Utilizadas</h2>
+<ul>
+  <li><strong>Flask</strong>: Framework web para a criação da API e frontend</li>
+  <li><strong>RabbitMQ</strong>: Mensageria para gerenciar filas de check-in em massa</li>
+  <li><strong>PostgreSQL</strong>: Banco de dados relacional para armazenamento de dados</li>
+  <li><strong>Scikit-learn</strong>: Biblioteca utilizada para o treinamento do modelo de previsão de risco de churn</li>
+  <li><strong>Docker</strong>: Usado para facilitar a configuração do ambiente de desenvolvimento e deploy</li>
+</ul>
 
-### Parte 1: API e Banco de Dados
-1. Criar uma API REST usando Flask ou FastAPI com os seguintes endpoints:
-   - `POST /aluno/registro`: Registrar um novo aluno
-   - `POST /aluno/checkin`: Registrar entrada do aluno na academia
-   - `GET /aluno/{id}/frequencia`: Obter histórico de frequência
-   - `GET /aluno/{id}/risco-churn`: Obter probabilidade de desistência
+<h2>Como Rodar o Projeto</h2>
 
-2. Implementar um banco de dados PostgreSQL com as seguintes tabelas:
-   - `alunos`: Informações básicas dos alunos
-   - `checkins`: Registro de entradas na academia
-   - `planos`: Tipos de planos disponíveis
+<h3>Requisitos</h3>
+<p>Certifique-se de ter o Docker instalado em sua máquina.</p>
 
-### Parte 2: Processamento Assíncrono
-1. Implementar um sistema de filas usando RabbitMQ para:
-   - Processar checkins em massa
-   - Gerar relatórios diários de frequência
-   - Atualizar o modelo de previsão de churn
+<h3>Passo a Passo para Deploy</h3>
+<ol>
+  <li>Clone o repositório para sua máquina local:
+    <pre><code>git clone https://github.com/rafaelsorgato/IAventuras-em-c-digo.git</code></pre>
+  </li>
+  <li>Navegue até a pasta do projeto:
+    <pre><code>cd IAventuras-em-c-digo</code></pre>
+  </li>
+  <li>Execute o comando para criar e rodar os containers com o Docker Compose:
+    <pre><code>docker-compose up --build</code></pre>
+    Este comando irá:
+    <ul>
+      <li>Construir a imagem do projeto.</li>
+      <li>Subir os containers necessários: Flask, RabbitMQ, PostgreSQL.</li>
+      <li>A aplicação estará disponível em <strong>http://localhost:5000</strong>.</li>
+    </ul>
+  </li>
+</ol>
 
-### Parte 3: Modelo de IA para Previsão de Churn
-1. Desenvolver um modelo simples de machine learning para prever a probabilidade de um aluno cancelar a matrícula baseado em:
-   - Frequência semanal
-   - Tempo desde o último checkin
-   - Duração média das visitas
-   - Tipo de plano
+<h2>Documentação da API (Swagger)</h2>
+<p>A documentação da API foi criada com Swagger. Você pode visualizar a documentação e interagir com a API através do seguinte link:</p>
+<ul>
+  <li><a href="https://app.swaggerhub.com/apis/RafaelSorgato/Aventuras/1.0" target="_blank">Documentação da API Swagger</a></li>
+</ul>
 
-## Entregáveis
-1. Código fonte completo no GitHub
-2. Documentação da API (Swagger ou similar)
-3. Script para inicialização do banco de dados
-4. Arquivo README com instruções de instalação e execução
-5. Notebook Jupyter demonstrando o treinamento do modelo de previsão de churn
+<h2>Modelo de Previsão (Risco de Churn)</h2>
+<p>O modelo de risco de churn foi treinado utilizando a biblioteca <strong>scikit-learn</strong>. O processo de treinamento foi feito com dados gerados artificialmente para simular um cenário próximo ao real. Esses dados incluem ruídos para tornar a previsão mais robusta.</p>
 
-## Critérios de Avaliação
-- Qualidade e organização do código
-- Funcionalidade da API
-- Implementação correta do sistema de filas
-- Performance e precisão do modelo de previsão
-- Documentação e facilidade de setup
+<h2>Arquivos Relacionados ao Treinamento do Modelo</h2>
+<ul>
+  <li><strong>`treinamento_detalhes.ipynb`</strong>: Análise e treinamento do modelo com detalhamento das etapas.</li>
+  <li><strong>`treinamento.py`</strong>: Script focado exclusivamente no treinamento do modelo de previsão de risco de churn.</li>
+</ul>
 
-## Bônus (opcional)
-- Implementar cache com Redis para melhorar performance
-- Adicionar autenticação JWT na API
-- Containerizar a aplicação com Docker
-- Implementar testes unitários
+<h2>Sobre os Dados de Treinamento</h2>
+<p>Os dados utilizados para treinar o modelo foram gerados manualmente, com a intenção de simular um cenário real, contendo tanto dados bons quanto com ruídos. Devido a essa geração personalizada, não será necessário realizar correções ou formatações adicionais.</p>
 
-## Instruções de Entrega
-1. Faça um fork deste repositório
-2. Desenvolva a solução em seu fork
-3. Crie um Pull Request para este repositório com sua solução
-4. Envie um email para rh@pactosolucoes.com.br contendo:
-   - Seu currículo
-   - Link do Pull Request criado
-   - Informações de contato
+<h2>Contato</h2>
+<ul>
+  <li><strong>Autor</strong>: Rafael Sorgato</li>
+  <li><strong>E-mail</strong>: rafaelsorgato@hotmail.com</li>
+  <li><strong>Celular</strong>: 61 983633075</li>
+</ul>
