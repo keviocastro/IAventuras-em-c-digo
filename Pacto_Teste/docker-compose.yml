@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres:005@postgres/Academia_db2
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: consumer_app
+    command: python -m app.consumers.consumer  # Execute o módulo consumer, não o churn_consumer!
+    depends_on:
+      - rabbitmq
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres:005@postgres/Academia_db2
+      - PYTHONPATH=/app
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: scheduler
+    command: python app/utils/scheduler.py
+    depends_on:
+      - rabbitmq
+    restart: on-failure
+
+  schedule_consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: schedule_consumer
+    command: python app/consumers/schedule_consumer.py
+    depends_on:
+      - rabbitmq
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres:005@postgres/Academia_db2
+      - PYTHONPATH=/app
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "005"
+      POSTGRES_DB: Academia_db2
+    ports:
+      - "5432:5432"
+
+  churn_consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: churn_consumer
+    command: python -m app.consumers.churn_consumer
+    depends_on:
+      - rabbitmq
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres:005@postgres/Academia_db2
+      - PYTHONPATH=/app

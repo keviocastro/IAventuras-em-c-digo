@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pika
+sqlalchemy
+psycopg2-binary
+pydantic
+schedule
+scikit-learn
+joblib
+pandas
+notebook
