@@ -1,0 +1,6 @@
+python -m uvicorn main:app --reload
+curl.exe -X POST -H "Content-Type: application/json" "http://127.0.0.1:8000/items?item=apple" 
+curl.exe -X GET http://127.0.0.1:8000/items/0
+curl.exe -X POST -H "Content-Type: application/json" -d "{\"nome\`":\`"pedro\"}" "http://127.0.0.1:8000/items?items"
+docker-compose down -v
+docker-compose up --build
