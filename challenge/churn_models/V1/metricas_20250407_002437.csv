@@ -1,0 +1,14 @@
+metric,value
+modelo,RandomForestClassifier
+accuracy,1.0
+precision,1.0
+recall,1.0
+f1,1.0
+importance_feature_0,0.0
+importance_feature_1,0.0
+importance_feature_2,0.0
+importance_feature_3,0.0
+importance_feature_4,0.0
+importance_feature_5,0.0
+importance_feature_6,0.0
+importance_feature_7,0.0

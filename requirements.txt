@@ -1,0 +1,42 @@
+# API
+fastapi>=0.115.0
+uvicorn>=0.34.0
+pydantic>=2.11.0
+starlette>=0.46.1
+python-multipart>=0.0.20
+httptools>=0.6.0
+websockets>=15.0.0
+
+# Testes
+pytest>=8.3.0
+pytest-cov>=6.0.0
+httpx>=0.28.0  # Necessário para TestClient
+coverage>=7.8.0
+
+# Ferramentas de qualidade
+ruff>=0.11.0
+taskipy>=1.14.0
+
+# Banco de dados
+sqlalchemy>=2.0.40
+psycopg2>=2.9.9
+
+# Processamento assíncrono
+pika>=1.3.0
+
+# Data Science e Machine Learning
+pandas>=2.2.0
+numpy>=2.2.0
+matplotlib>=3.10.0
+seaborn>=0.13.0
+scikit-learn>=1.6.0
+scipy>=1.15.0
+
+# Jupyter e desenvolvimento
+ipykernel>=6.29.0
+notebook>=7.3.0
+jupyterlab>=4.3.0
+
+# Utilitários
+python-dotenv>=1.1.0
+pyyaml>=6.0.0
