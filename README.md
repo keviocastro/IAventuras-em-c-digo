@@ -1,4 +1,4 @@
-# Teste Prático para Engenheiro de IA - Nível Júnior
+# Sistema de Machine Learning End-to-End para previsão de turnover em academias
 
 ## Contexto
 Uma academia de ginástica precisa de um sistema para monitorar a frequência dos alunos e prever possíveis desistências (churn). O sistema deve processar dados de entrada dos alunos na academia e gerar insights para a equipe de retenção.
