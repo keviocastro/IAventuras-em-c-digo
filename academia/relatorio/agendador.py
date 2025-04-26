@@ -26,7 +26,7 @@ def iniciar_worker_relatorio(queue):
             except Exception as e:
                 print(f"[WORKER RELATÓRIO] Erro ao processar a mensagem: {e}")
             queue.put("iniciar_worker_relatorio")
-    conexao = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+    conexao = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
     canal = conexao.channel()
     canal.queue_declare(queue="relatorio_diario", durable=True)
     canal.basic_qos(prefetch_count=1)

@@ -3,10 +3,15 @@ from datetime import datetime, timedelta, timezone
 import random
 from tqdm import tqdm
 from sqlalchemy import create_engine, text
+import os 
 
-#engine = create_engine('sqlite:///instance/pulsefit.db')
+from academia.config import USER_DB_SQLITE
 
-engine = create_engine('postgresql://postgres:123@localhost:5432/pulsefit')
+DATABASE_URL  = "postgresql://postgres:1233@db:5432/pulsefit"
+if USER_DB_SQLITE: 
+    engine = create_engine('sqlite:///instance/pulsefit.db')
+else:
+    engine = create_engine(DATABASE_URL,  pool_pre_ping=True) # "postgresql://postgres:123@localhost:5432/pulsefit"
 
 fake = Faker('pt_BR')
 

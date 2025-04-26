@@ -1,7 +1,7 @@
 import pika
 import json
 from academia.models import db, Checkin, Cliente  # Adapte conforme sua estrutura
-
+from academia import RABBITMQ_URL
 def envia_relatorio_para_fila(data):
     # Busca todos os check-ins com aluno relacionado
     checkins = Checkin.query.join(Cliente).order_by(Checkin.dt_checkin.asc()).all()
@@ -16,7 +16,7 @@ def envia_relatorio_para_fila(data):
         for c in checkins
     ]
 
-    conexao = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+    conexao = pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
     canal = conexao.channel()
 
     # Certifique-se de que a fila é a mesma que o worker está consumindo

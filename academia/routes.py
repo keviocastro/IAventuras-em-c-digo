@@ -1,6 +1,6 @@
 from academia import app
 from flask import render_template, flash, request, redirect, url_for
-from academia import db 
+from academia import db, RABBITMQ_URL
 from academia.forms import CadastroPlano, CadastroCliente, CadastroCheckin
 from academia.models import Plano, Cliente, Checkin
 from datetime import datetime, timedelta
@@ -35,7 +35,7 @@ def page_checkin():
                     }
 
                     # Enviar mensagem para o RabbitMQ
-                    conexao = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+                    conexao = pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
                     canal = conexao.channel()
                     canal.queue_declare(queue="fila_checkin", durable=True)
                     canal.basic_publish(
