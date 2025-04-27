@@ -4,6 +4,8 @@ from academia import db, RABBITMQ_URL
 from academia.forms import CadastroPlano, CadastroCliente, CadastroCheckin
 from academia.models import Plano, Cliente, Checkin
 from datetime import datetime, timedelta
+import plotly.graph_objs as go 
+import plotly.io as pio 
 
 from academia.modelo_previsor_charn import carregar_modelo, previsao_proximos_dias, executar_subconsulta, transformar_dados
 
@@ -218,7 +220,39 @@ def page_status_aluno():
 def page_aluno_frequencia(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
     checkins = Checkin.query.filter_by(cliente_id=cliente.id).order_by(Checkin.dt_checkin.desc()).all()
-    return render_template("aluno_frequencia.html", aluno=cliente, checkins=checkins)
+    
+    # Criando grafico de linha 
+    # Estraindo dados 
+    data = [checkin.dt_checkin.strftime('%d/%m/%Y') for checkin in checkins][::-1]
+    horas = [
+        (checkin.dt_checkout -  checkin.dt_checkin).total_seconds() / 3600
+        for checkin in checkins
+    ][::-1]
+    
+    figura = go.Figure()
+
+    figura.add_trace(
+        go.Bar(
+            x = data,
+            y = horas
+        )
+    )
+    figura.update_layout(
+        template="plotly_dark",
+        xaxis_title="Data",
+        yaxis_title="Tempo (em horas)"
+    )
+
+    config = {
+    'displayModeBar': False,  # Remove a barra de ferramentas
+    'scrollZoom': False,      # Desativa o zoom com scroll
+    'displaylogo': False,     # Remove o logo do Plotly
+    'modeBarButtonsToRemove': ['toImage', 'zoomIn', 'zoomOut', 'pan', 'resetScale2d']  # Remove botões específicos
+    }
+
+    figura_html = pio.to_html(figura, full_html=True, config=config)
+
+    return render_template("aluno_frequencia.html", aluno=cliente, checkins=checkins, figura_html=figura_html)
 
 @app.route('/status_aluno/<int:cliente_id>/risco-churn')
 def page_aluno_risco_churn(cliente_id):
