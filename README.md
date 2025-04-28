@@ -1,60 +1,105 @@
-# Teste Prático para Engenheiro de IA - Nível Júnior
 
-## Contexto
-Uma academia de ginástica precisa de um sistema para monitorar a frequência dos alunos e prever possíveis desistências (churn). O sistema deve processar dados de entrada dos alunos na academia e gerar insights para a equipe de retenção.
+# Pulse Fit
 
-## Requisitos Técnicos
+**Pulse Fit** é um sistema desenvolvido em Flask para gerenciar academias, incluindo funcionalidades como check-ins de alunos, geração de relatórios, envio de e-mails e monitoramento de alunos em risco.
 
-### Parte 1: API e Banco de Dados
-1. Criar uma API REST usando Flask ou FastAPI com os seguintes endpoints:
-   - `POST /aluno/registro`: Registrar um novo aluno
-   - `POST /aluno/checkin`: Registrar entrada do aluno na academia
-   - `GET /aluno/{id}/frequencia`: Obter histórico de frequência
-   - `GET /aluno/{id}/risco-churn`: Obter probabilidade de desistência
+---
 
-2. Implementar um banco de dados PostgreSQL com as seguintes tabelas:
-   - `alunos`: Informações básicas dos alunos
-   - `checkins`: Registro de entradas na academia
-   - `planos`: Tipos de planos disponíveis
+## 📋 Funcionalidades
 
-### Parte 2: Processamento Assíncrono
-1. Implementar um sistema de filas usando RabbitMQ para:
-   - Processar checkins em massa
-   - Gerar relatórios diários de frequência
-   - Atualizar o modelo de previsão de churn
+- **Check-in de Alunos**: Registro de entrada e saída dos alunos.
+- **Relatórios**: Geração de relatórios em formato `.txt` e envio por e-mail.
+- **Fila de Processamento**: Uso do RabbitMQ para processamento assíncrono de tarefas.
+- **Monitoramento de Alunos em Risco**: Identificação de alunos com baixa frequência.
+- **Integração com Banco de Dados**: Suporte a PostgreSQL.
+- **Envio de E-mails**: Configuração para envio de relatórios via Gmail ou outros provedores SMTP.
 
-### Parte 3: Modelo de IA para Previsão de Churn
-1. Desenvolver um modelo simples de machine learning para prever a probabilidade de um aluno cancelar a matrícula baseado em:
-   - Frequência semanal
-   - Tempo desde o último checkin
-   - Duração média das visitas
-   - Tipo de plano
+---
 
-## Entregáveis
-1. Código fonte completo no GitHub
-2. Documentação da API (Swagger ou similar)
-3. Script para inicialização do banco de dados
-4. Arquivo README com instruções de instalação e execução
-5. Notebook Jupyter demonstrando o treinamento do modelo de previsão de churn
+## 🛠️ Tecnologias Utilizadas
 
-## Critérios de Avaliação
-- Qualidade e organização do código
-- Funcionalidade da API
-- Implementação correta do sistema de filas
-- Performance e precisão do modelo de previsão
-- Documentação e facilidade de setup
+- **Backend**: Flask
+- **Banco de Dados**: PostgreSQL
+- **Mensageria**: RabbitMQ
+- **Frontend**: HTML, CSS (Bootstrap)
+- **Outros**:
+  - Flask-Mail
+  - Flask-Migrate
+  - SQLAlchemy
+  - APScheduler
 
-## Bônus (opcional)
-- Implementar cache com Redis para melhorar performance
-- Adicionar autenticação JWT na API
-- Containerizar a aplicação com Docker
-- Implementar testes unitários
+---
 
-## Instruções de Entrega
-1. Faça um fork deste repositório
-2. Desenvolva a solução em seu fork
-3. Crie um Pull Request para este repositório com sua solução
-4. Envie um email para rh@pactosolucoes.com.br contendo:
-   - Seu currículo
-   - Link do Pull Request criado
-   - Informações de contato
+## 🚀 Como Executar o Projeto
+
+> ⚡ **Este projeto deve ser executado via Docker.**
+
+### ⚙️ Pré-requisitos
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+### 📦 Passos para rodar com Docker
+
+
+1. **Execute o projeto usando Docker Compose**:
+   ```bash
+   docker-compose up -d --build
+   ```
+
+   - O comando acima irá:
+     - Construir as imagens necessárias.
+     - Subir o banco de dados PostgreSQL e a aplicação Flask.
+     - Popular automaticamente o banco de dados com dados iniciais.
+
+2. **Acesse a aplicação no navegador**:
+   ```
+   http://localhost:5000
+   ```
+
+---
+
+## 📧 Configuração de E-mail
+
+Para envio de relatórios por e-mail, configure as credenciais SMTP no arquivo `academia/__init__.py`:
+
+```python
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'seu_email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'sua_senha_de_aplicativo'
+app.config['MAIL_DEFAULT_SENDER'] = 'seu_email@gmail.com'
+```
+
+---
+
+## 📂 Estrutura do Projeto
+
+```
+Pulse_Fit/
+├── academia/
+│   ├── __init__.py
+│   ├── models.py
+│   ├── routes.py
+│   ├── templates/
+│   │   ├── aluno_risco.html
+│   │   └── ...
+│   ├── relatorio/
+│   │   ├── utils.py
+│   │   ├── worker_relatorio.py
+│   │   ├── agendador.py
+│   │   └── relatorio_alunos.py
+├── gerar_dados_para_db.py
+├── run.py
+├── requirements.txt
+├── docker-compose.yml
+├── Dockerfile
+└── README.md
+```
+
+---
+
+## 📜 Licença
+
+Este projeto está sob a licença MIT. Sinta-se à vontade para usá-lo e modificá-lo.
